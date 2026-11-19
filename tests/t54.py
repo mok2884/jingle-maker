@@ -8,7 +8,7 @@ async def main():
     pg = await ctx.new_page(); errs=[]; pg.on('pageerror', lambda e: errs.append(str(e)))
     await pg.goto('http://localhost:8765/jingle-maker.html'); await asyncio.sleep(1)
     await pg.click('.modalBack button[data-a="pick"]'); await asyncio.sleep(1)
-    await pg.set_input_files('#fileWav', 'prod.wav'); await asyncio.sleep(4)
+    await pg.set_input_files('#fileWav', 'test.wav'); await asyncio.sleep(4)
     await pg.evaluate("()=>{ [47,100].forEach(t=>addMark(t*48000)); }"); await asyncio.sleep(1)
     # top lane menu
     cv = await pg.query_selector('#topCanvas'); bb = await cv.bounding_box()
