@@ -1,0 +1,2591 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ジングルメーカー</title>
+<style>
+:root{--bg:#15171A;--panel:#1D2024;--panel2:#2A2D33;--line:#2E3238;--line2:#3A3F47;--text:#ECE9E3;--muted:#9AA0A8;--teal:#4FC1B4;--amber:#E8A33D;--cursor:#FFD27A;--rec:#D9443F;--mark:#F07A52}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+.menu .mi-l{display:inline-flex;align-items:center}
+.menu .mi-b{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:4px;font-size:11px;font-weight:700;background:#E8A33D;color:#241703;margin-right:8px}
+.menu .mi-y{color:#F2B65A;font-weight:600}
+.menu .mi-c{color:#C9A8FF;font-weight:600}
+.menu .msep{height:1px;background:#454A53;margin:4px 6px}
+#recAlarm{position:fixed;left:50%;top:8px;transform:translateX(-50%);z-index:9999;max-width:70vw;background:#7a1010;color:#fff;border:2px solid #ff5b5b;border-radius:8px;padding:10px 14px;font-size:14px;line-height:1.5;box-shadow:0 6px 24px rgba(0,0,0,.5);cursor:pointer;white-space:pre-line}
+#recAlarm b{display:block;font-size:15px;margin-bottom:2px}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:"Hiragino Sans","Noto Sans JP","Yu Gothic UI","Meiryo",system-ui,sans-serif;font-size:14px;line-height:1.5}
+.wrap{height:calc(100vh / var(--z, 1));display:flex;flex-direction:column;overflow:hidden}
+.fixedTop{flex:none;padding:12px 20px 8px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid var(--line)}
+.takesScroll{flex:1 1 auto;min-height:0;overflow-y:auto;padding:10px 20px 16px}
+.takesScroll .lanehead{margin-bottom:8px}
+#takes{display:flex;flex-direction:column;gap:8px}
+
+header{display:flex;align-items:stretch;gap:12px}
+.brand{display:flex;flex-direction:column;gap:2px;flex:0 0 200px;min-width:0}
+.zoomSel{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px}
+.zoomSel select{font-size:11px;padding:0 4px;min-width:0}
+.brand{overflow:hidden}
+.brand .status{flex-direction:column;flex-wrap:nowrap;gap:0;font-size:11px}
+.brand .status > span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;font-size:11px;line-height:16px;height:16px}
+.filebtns{display:flex;flex-direction:column;gap:4px;flex:none}
+.filebtns button{min-height:22px;height:22px;font-size:11px;padding:0 12px}
+.topParams{flex:1 1 auto;min-width:0;display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:10px;align-content:start}
+.ptogs{display:flex;flex-direction:row;flex-wrap:wrap;gap:6px;align-items:flex-start;align-content:flex-start;border-left:2px solid var(--line2);padding-left:8px}
+.ptog{position:relative}
+.ptb{min-height:26px;height:26px;padding:0 10px;font-size:12px;color:var(--amber);background:transparent;border:1px solid var(--line2);display:inline-flex;align-items:center;gap:6px}
+.ptb .car{font-size:10px;color:var(--muted)}
+.ptb.open{background:#2E2617;border-color:var(--amber)}
+.pop{position:absolute;top:calc(100% + 6px);left:0;z-index:45;background:#23262B;border:1px solid #4A4F57;border-radius:10px;padding:10px 12px;box-shadow:0 10px 28px rgba(0,0,0,.5);min-width:240px}
+.pop.pgroup{border-left:1px solid #4A4F57}
+.pop.wide{width:880px;max-width:calc(100vw - 40px);padding:0}
+.pop.wide .settings{margin:0;border:0;background:transparent}
+.pgroup{border-left:2px solid var(--line2);padding-left:8px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.pgroup .t{color:var(--amber);font-size:11px;font-weight:600}
+.pgroup label{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);white-space:nowrap}
+.pgroup label > select{flex:1 1 auto;min-width:0;width:0}
+.pgroup input[type=number]{width:46px;padding:1px 3px;font-size:12px;flex:0 1 46px;min-width:34px}
+.pgroup label i{font-style:normal;font-size:10px}
+.pgroup select{padding:1px 4px;font-size:12px}
+.takeBtn{flex:none;width:118px;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:#2E1D16;border:1px solid #B5553A;color:#FFD9CB;border-radius:10px;padding:0}
+.takeBtn .st{font-size:17px;font-weight:500;letter-spacing:.14em;color:#FFD9CB}
+.takeBtn .sk{position:absolute;top:7px;right:9px;font-size:10px;color:#D98568;letter-spacing:0}
+.takeBtn:hover:not(:disabled){background:#3A2419}
+.takeBtn:active{transform:scale(.98)}
+.settings{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 16px;margin-top:16px;display:flex;flex-direction:column;gap:12px}
+.settings h2{margin:0;font-size:14px}
+h1{font-size:18px;margin:0;letter-spacing:.04em;white-space:nowrap}
+.sub{color:var(--muted);font-size:12px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.spacer{flex:1 1 20px}
+button{background:var(--panel2);color:var(--text);border:1px solid var(--line2);border-radius:7px;padding:0 12px;min-height:38px;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
+button:hover:not(:disabled){background:#33373e}
+button:disabled{opacity:.4;cursor:default}
+button.primary{background:var(--amber);color:#241703;border-color:var(--amber);font-weight:700}
+button.primary:hover:not(:disabled){background:#f2b459}
+button.rec{background:#2a1b1c;border-color:#5a2a2c;color:#ffb3b5;font-weight:700;min-height:44px;font-size:15px;padding:0 14px;font-variant-numeric:tabular-nums;flex:none;width:118px;white-space:normal;border-radius:10px}
+button.rec.on{background:var(--rec);border-color:var(--rec);color:#fff}
+button.small{min-height:32px;padding:0 9px;font-size:12px}
+.kbd{color:var(--muted);font-size:11px;margin-left:4px}
+section.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.lanehead{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;margin-bottom:8px}
+.lanehead h2{margin:0;font-size:14px;font-weight:600}
+.hint{color:var(--muted);font-size:12px}
+.candClr{height:20px;min-height:0;padding:0 10px;margin-right:10px;font-size:11px;line-height:18px;border-radius:5px;background:#33284a;border:1px solid #8C6BD6;color:#DCCBFF}
+.candClr:hover{background:#43355f}
+canvas.lane{display:block;width:100%;border-radius:6px;background:#0F1113;border:1px solid var(--line);touch-action:none}
+#topCanvas{height:100px}
+#topCard{position:relative}
+.dropOv:not([hidden]) ~ .dropHint{display:none!important}
+.dropOv{position:absolute;inset:0;z-index:30;border-radius:10px;background:rgba(40,31,17,.88);border:2px dashed var(--amber);backdrop-filter:blur(1px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;pointer-events:none}
+.dropOv .plus{font-size:44px;line-height:1;color:var(--amber);font-weight:300}
+.dropOv .dt{font-size:14px;color:#FFE2B0;font-weight:600}
+.dropOv.ng{background:rgba(48,20,21,.9);border-color:#d9443f}.dropOv.ng .plus,.dropOv.ng .dt{color:#ffb3b5}
+.dropHint{display:none;position:absolute;left:14px;right:14px;bottom:12px;height:100px;border:1.5px dashed var(--line2);border-radius:6px;align-items:center;justify-content:center;color:var(--muted);font-size:13px;pointer-events:none;z-index:2}
+#topCard.empty .dropHint{display:flex}
+.reccol{flex:none;width:118px;display:flex;flex-direction:column;gap:6px}
+.reccol button.rec{flex:1 1 0;width:100%;min-width:0;min-height:0;overflow:hidden;padding:0 6px;line-height:1.25}
+button.rec.idle{opacity:.45}
+button.rec .rs{display:block;font-size:11px;font-weight:600;letter-spacing:.12em;margin-top:2px}
+button.rec.standby{animation:recblink 1.1s ease-in-out infinite}
+@keyframes recblink{0%,100%{background:#2a1b1c;border-color:#5a2a2c;color:#ffb3b5}50%{background:#7a2326;border-color:#d9443f;color:#fff}}
+.mon{flex:none;width:100%;min-width:0;overflow:hidden;min-height:0;height:44px;padding:2px 6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;border-radius:10px;background:#18211F;border:1px solid #2F4A46;color:#9FD9D1;white-space:nowrap}
+.mon .ml{font-size:12px;font-weight:700;letter-spacing:.06em;line-height:1.3}
+.mon .md{display:block;font-size:10px;color:var(--muted);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.3}
+.mon.on{background:var(--teal);border-color:var(--teal);color:#0E2A27}
+.mon.on .md{color:#164a44}
+.take{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:grid;grid-template-columns:124px 74px 50px minmax(0,1fr) 250px;column-gap:10px;row-gap:6px}
+.take.live{border-color:rgba(217,68,63,.6)}
+.badge.live{background:#3a1b1c;color:#ff9a96}
+.take.active{border-color:var(--teal)}
+.take .info{grid-column:1;grid-row:1;display:flex;flex-direction:column;gap:2px;min-width:0}
+.ebtns{grid-column:2;grid-row:1;display:flex;flex-direction:column;gap:4px;justify-content:center;padding:4px;border-radius:8px;background:rgba(79,193,180,.07);border:1px solid rgba(79,193,180,.35)}
+.ebtns button{min-height:28px;padding:0 4px;font-size:11px}
+.take .info .name{font-size:15px;font-weight:700}
+.take .info .meta{color:var(--muted);font-size:11px;font-variant-numeric:tabular-nums;line-height:1.35;white-space:nowrap}
+.badge{display:inline-block;font-size:11px;padding:0 8px;border-radius:10px;background:var(--panel2);color:#C5CAD1;width:max-content;margin-top:2px}
+.badge.ok{background:#173B37;color:#8FE0D5}.badge.edit{background:#3A2E14;color:#F2C778}
+.cvwrap{grid-column:4;grid-row:1;position:relative;min-width:0}
+.topwrap{position:relative}
+.topwrap .fitb{position:absolute;left:3px;top:2px;height:15px;min-height:0;padding:0 10px;font-size:10px;line-height:13px;border-radius:4px;background:rgba(42,45,51,.72);border:1px solid rgba(110,116,126,.6);color:#C5CAD1;z-index:3}
+.take canvas.lane{height:120px}
+.cvwrap .fitb{position:absolute;left:3px;top:2px;height:15px;min-height:0;padding:0 10px;font-size:10px;line-height:13px;border-radius:4px;background:rgba(42,45,51,.72);border:1px solid rgba(110,116,126,.6);color:#C5CAD1;z-index:3}
+.cvwrap .fitb:hover{background:rgba(58,63,71,.95)}
+.mcol{grid-column:3;grid-row:1;display:flex;flex-direction:column;gap:4px;padding:5px 0}
+.spdb{flex:none;height:28px;min-height:28px;padding:0;font-size:11px;font-variant-numeric:tabular-nums;color:#B4BAC2}
+.spdb.on{background:var(--amber);border-color:var(--amber);color:#241703;font-weight:700}
+.flagb{flex:1 1 auto;min-height:0;padding:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:#1A2230;border:1px solid #3A5A86;border-radius:8px}
+.flagb .fv{font-size:12px;color:#7FB8FF;line-height:1}
+.flagb .fl{font-size:10px;letter-spacing:.06em;color:#A9C6EC}
+.flagb:hover:not(:disabled){background:#22304A}
+.flagb:active{transform:scale(.97)}
+.take .side{grid-column:5;grid-row:1;display:flex;flex-direction:column;gap:3px;min-width:0}
+.take .row2{grid-column:1 / -1;grid-row:2;display:flex;align-items:center;gap:8px;padding:4px 6px;border-radius:8px;background:rgba(232,163,61,.06);border:1px solid rgba(232,163,61,.35)}
+.fnwrap{display:flex;align-items:center;gap:2px;flex:0 1 360px;min-width:160px;font-size:12px;color:var(--muted)}
+.fname{flex:1 1 auto;min-width:0;font-size:13px;padding:4px 6px}
+.gainrow{display:flex;align-items:center;gap:4px}
+.gainrow .lbl{flex:1 1 auto;color:var(--muted);font-size:11px}
+.gainrow button{min-height:26px;width:28px;padding:0}
+.gainrow .lvl,.gainrow .lvoff{width:auto;min-height:26px;padding:0 8px;font-size:11px}
+.gainrow .lvl.on{background:#3B2A10;border-color:var(--amber);color:#FFD27A}
+.gainrow .lvoff:disabled{opacity:.35}
+.nlk{font-variant-numeric:tabular-nums}
+.nlk.over{color:#ffb86b}
+.gainrow .val{min-width:56px;text-align:center;font-variant-numeric:tabular-nums;font-weight:600;font-size:13px}
+.okeinfo{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;line-height:1.35;overflow:hidden;text-overflow:ellipsis}
+.okeinfo b{color:var(--text);font-weight:500}
+.pbtn{width:30px;height:30px;min-height:30px;border-radius:50%;background:var(--teal);color:#0E2A27;border:0;font-size:12px;padding:0;flex:none}
+.pbtn:disabled{background:var(--panel2);color:var(--muted)}
+.ptime{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;min-width:86px}
+.speedbar{position:relative;display:flex;align-items:center;gap:0;flex:0 0 200px;justify-content:space-between;height:28px}
+.pS,.pE{min-height:28px;padding:0 8px;font-size:12px}
+.ebtns .noEd{background:#1E2B29;border-color:rgba(79,193,180,.6);color:#9FE3DA;font-weight:600}
+.grpEdit,.grpMade{display:flex;align-items:center;gap:6px;padding:3px 6px 3px 4px;border-radius:8px;position:relative}
+.grpEdit{background:rgba(79,193,180,.07);border:1px solid rgba(79,193,180,.35)}
+.grpMade{flex:1 1 auto;min-width:0;background:rgba(232,163,61,.06);border:1px solid rgba(232,163,61,.35)}
+.glbl{font-size:10px;color:var(--muted);writing-mode:vertical-rl;letter-spacing:.1em;padding:0 1px}
+.grpEdit .glbl{color:#7FD6CC}.grpMade .glbl{color:#F2C778}
+.seek{flex:1 1 160px;min-width:140px;display:flex;align-items:center;gap:8px}
+.seek .ptime{min-width:96px;text-align:right}
+.seekbar{flex:1 1 auto;min-width:60px;accent-color:var(--teal)}
+.speedbar::before{content:"";position:absolute;left:12px;right:12px;top:50%;height:2px;background:var(--line2)}
+.speedbar button{position:relative;background:var(--panel);border:0;min-height:22px;height:22px;padding:0 2px;border-radius:5px;color:#B4BAC2;font-size:11px;font-variant-numeric:tabular-nums}
+.speedbar button.on{background:var(--amber);color:#241703;font-weight:700}
+.row2 .acts{display:flex;gap:5px;margin-left:auto;flex-wrap:nowrap;flex:none}
+.row2{flex-wrap:nowrap!important}
+.row2 .acts button{min-height:28px;padding:0 9px;font-size:12px}
+.row2 .acts button.primary{min-width:76px}
+.warn{color:#ffb86b;font-size:12px}
+.vu{display:flex;align-items:center;gap:10px;padding:4px 10px;background:var(--panel);border:1px solid var(--line);border-radius:8px}
+.vu canvas{width:176px;height:88px;border-radius:5px;display:block}
+.vu .side{white-space:nowrap;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:var(--muted);flex:none;width:58px}
+#vuSrc{display:block;width:100%;text-align:center;overflow:hidden;text-overflow:ellipsis;height:16px;line-height:16px}
+.lamp{width:14px;height:14px;border-radius:50%;background:#3A2020;border:1px solid #5A2A2C}
+.lamp.on{background:#ff4b45;border-color:#ff8a85;box-shadow:0 0 8px #ff4b45}
+
+.sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px 22px}
+.sgroup{border-left:2px solid var(--line2);padding-left:12px;display:flex;flex-direction:column;gap:6px}
+.sgroup .t{color:var(--amber);font-size:12px;font-weight:600}
+.sgroup label{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
+.sgroup input[type=number]{width:84px}
+.sgroup select{max-width:170px}
+input,select{background:var(--panel2);color:var(--text);border:1px solid var(--line2);border-radius:6px;padding:4px 6px;font:inherit;font-size:13px}
+.status{font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 16px}
+.status b{color:var(--text);font-weight:500}
+.menu{position:fixed;z-index:50;background:#2A2D33;border:1px solid #454A53;border-radius:8px;padding:4px;min-width:170px;box-shadow:0 6px 18px rgba(0,0,0,.4)}
+.menu button{display:flex;justify-content:space-between;align-items:center;width:100%;border:0;background:transparent;min-height:34px}
+.menu button:hover{background:#3A3F47}
+.modalBack{position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center}
+.menu.dialog{position:static;width:440px;max-width:calc(100vw - 40px);padding:18px 18px 16px;display:flex;flex-direction:column;gap:14px;border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.5)}
+.dmsg{font-size:14px;line-height:1.6}
+.dinput{width:100%;font-size:14px;padding:7px 9px}
+.drow{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;margin:0}
+.menu.dialog .drow button{display:inline-flex;align-items:center;justify-content:center;width:auto;min-width:88px;min-height:34px;height:34px;padding:0 16px;font-size:13px;white-space:nowrap;flex:0 0 auto;background:var(--panel2);border:1px solid var(--line2);border-radius:7px}
+.menu.dialog .drow button:hover{background:#3A3F47}
+.menu.dialog .drow button.primary{background:var(--amber);color:#241703;border-color:var(--amber)}
+.menu.dialog .drow button.primary:hover{background:#f2b459}
+.menu.dialog.wide{width:580px}
+.dta{width:100%;min-height:200px;resize:vertical;font:14px/1.6 inherit;font-family:inherit;padding:8px 10px;background:var(--panel2);color:var(--text);border:1px solid var(--line2);border-radius:7px}
+.menu.dialog .drow button.danger{background:#3a1b1c;border-color:#7a3436;color:#ffb3b5;margin-right:auto}
+.dconfirm{border-top:1px solid var(--line2);padding-top:12px;display:flex;flex-direction:column;gap:10px}
+.dconfirm .cmsg{font-size:13px;color:#ffb3b5}
+.menu.dialog .dchoice{display:flex;justify-content:space-between;align-items:center;width:100%;min-height:36px;padding:0 12px;border:1px solid var(--line2);border-radius:7px;background:transparent}
+.menu.dialog .dchoice:hover{background:#3A3F47}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#2b2e34;border:1px solid var(--line2);padding:8px 16px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:60}
+.toast.show{opacity:1}
+.keys{display:flex;flex-wrap:wrap;gap:6px 16px;color:var(--muted);font-size:12px}
+.keys span b{display:inline-block;padding:0 6px;margin-right:5px;border:1px solid var(--line2);border-bottom-width:2px;border-radius:4px;color:var(--text);background:#22252A;font-weight:400}
+.empty{color:var(--muted);font-size:13px;padding:6px 2px}
+.addRow{display:flex;gap:8px;margin-top:8px}
+.addTake{flex:1 1 0;min-height:40px;border-style:dashed;background:transparent;color:var(--muted)}
+.addTake:hover:not(:disabled){color:var(--text);background:var(--panel)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="fixedTop">
+<header>
+  <div class="brand">
+    <h1>ジングルメーカー</h1>
+    <span class="sub" id="sessName">セッションなし</span>
+    <label class="zoomSel">表示 <select id="selZoom"><option value="0.8">80%</option><option value="0.9">90%</option><option value="1">100%</option><option value="1.1">110%</option><option value="1.25">125%</option></select></label>
+    <div class="status" id="statusBar"></div>
+  </div>
+  <div class="filebtns">
+    <button id="btnLoadWav">音声読込</button><input type="file" id="fileWav" accept="audio/*,.wav" hidden>
+    <button id="btnSaveSess" title="Ctrl+Shift+S">保存</button>
+    <button id="btnOpenSess">開く</button>
+    <button id="btnNewSess">新規</button>
+  </div>
+  <div class="topParams">
+    <div class="pgroup"><div class="t">入出力</div>
+      <label>入力<select id="selIn"></select></label>
+      <label>ch<select data-k="inCh"><option value="0">1</option><option value="1">2</option></select></label>
+      <label>出力<select id="selOut"></select></label>
+      <label>PEAK<input type="number" data-k="peakThr" step="0.5" max="0"><i>dBFS</i></label>
+    </div>
+    <div class="ptogs">
+      <div class="ptog"><button class="ptb" data-pop="popNare">ナレの入り<span class="car">▾</span></button>
+        <div class="pop pgroup" id="popNare" hidden><div class="t">ナレの入り（1拍ごと）</div>
+      <label>遅らせ<input type="number" data-k="delayBeats" step="0.05" min="0"><i>拍</i></label>
+      <label>イントロ最短<input type="number" data-k="introMin" step="0.1" min="0"><i>秒</i></label>
+      <label>余り 最短<input type="number" data-k="remMin" step="0.1"><i>秒</i></label>
+      <label>余り 上限<input type="number" data-k="remMax" step="0.1"><i>秒</i></label>
+        </div></div>
+      <div class="ptog"><button class="ptb" data-pop="popOke">オケの音量<span class="car">▾</span></button>
+        <div class="pop pgroup" id="popOke" hidden><div class="t">オケの音量</div>
+      <label>前/中/後<input type="number" data-k="preDb" step="0.5"><input type="number" data-k="duckDb" step="0.5"><input type="number" data-k="postDb" step="0.5"><i>dB</i></label>
+      <label>下げ 前/後<input type="number" data-k="dnBefore" step="0.05" min="0"><input type="number" data-k="dnAfter" step="0.05" min="0"><i>秒</i></label>
+      <label>戻し 前/後<input type="number" data-k="upBefore" step="0.05" min="0"><input type="number" data-k="upAfter" step="0.05" min="0"><i>秒</i></label>
+        </div></div>
+      <div class="ptog"><button class="ptb" data-pop="popSettings">設定<span class="car">▾</span></button>
+        <div class="pop wide" id="popSettings" hidden><section class="settings" id="settingsBox">
+  <div class="sgrid">
+    <div class="sgroup"><div class="t">保存</div>
+      <label>作業フォルダ<button class="small" id="btnWorkDir">選ぶ</button></label>
+      <span class="hint" id="workDirName">未設定</span>
+      <label>完成したジングル</label>
+      <span class="hint" id="expDirName">各セッションの「ジングル」フォルダに入ります</span>
+    </div>
+    <div class="sgroup"><div class="t">オケ</div>
+      <label>オケのフォルダ<span><button class="small" id="btnBgmDir">フォルダ</button> <button class="small" id="btnBgmFiles">ファイル</button></span></label>
+      <input type="file" id="fileBgm" accept="audio/*,.wav" multiple hidden>
+      <span class="hint" id="bgmName">未設定</span>
+      <label>BPM<input type="number" data-k="bpm" step="0.01" min="20"></label>
+      <label>1拍目の位置（秒）<input type="number" data-k="t1" step="0.001" min="0"></label>
+      <label>オケの基準音量（dB）<input type="number" data-k="bgmBase" step="0.5"></label>
+    </div>
+    <div class="sgroup"><div class="t">自動 START／END</div>
+      <label>自動ENDの余白（秒）<input type="number" data-k="endPad" step="0.05" min="0"></label>
+      <label>編集なしのSTARTの余白（秒）<input type="number" data-k="startPad" step="0.01" min="0"></label>
+      <label>編集なしの間の基準（秒）<input type="number" data-k="startGap" step="0.1" min="0.5" title="これより短い間は、同じナレの中の間とみなします"></label>
+      <span class="hint">間の基準より短い間は、同じナレの中の間とみなします</span>
+    </div>
+    <div class="sgroup"><div class="t">書き出し（16bit / 48kHz WAV）</div>
+      <label>ナレのレベル調整の目標（LKFS）<input type="number" data-k="narTarget" step="0.5"></label>
+      <label>ピーク上限（dBFS）<input type="number" data-k="peakCeil" step="0.1" max="0"></label>
+      <label>頭の無音（秒）<input type="number" data-k="padHead" step="0.05" min="0"></label>
+      <label>尻の無音（秒）<input type="number" data-k="padTail" step="0.05" min="0"></label>
+      <label>START/END確認の拡大（枠全体の秒数）<input type="number" data-k="editZoom" step="0.5" min="0.5"></label>
+      <label>Ctrl+ダブルクリックの拡大（枠全体の秒数）<input type="number" data-k="dblZoom" step="0.1" min="0.2"></label>
+    </div>
+  </div>
+  <div class="keys">
+    <span><b>クリック</b>カーソル</span>
+    <span><b>Space</b>再生／停止（止めた所から）</span>
+    <span><b>Shift+Space</b>カーソルから</span>
+    <span><b>録音の波形</b>区切るのはSPLIT・M・カーソル上で右クリック／区切りはドラッグで移動・右クリックで削除</span>
+    <span><b>テイクの端（▮）</b>ドラッグで録音全体のどこまでも伸ばせる</span>
+    <span><b>右クリック</b>分割／スタート／エンド</span>
+    <span><b>Ctrl+S</b>分割</span>
+    <span><b>Delete</b>選択を削除</span>
+    <span><b>Ctrl+C / V</b>コピー／貼り付け</span>
+    <span><b>Ctrl+Z / Y</b>元に戻す／やり直し</span>
+    <span><b>Alt+ホイール</b>送り・戻し</span>
+    <span><b>Ctrl+ホイール</b>横の拡大</span>
+    <span><b>Ctrl+ダブルクリック</b>そこを中心に拡大</span>
+    <span><b>Shift+ホイール</b>縦の拡大</span>
+    <span><b>M</b>SPLIT（区切る）</span>
+    <span><b>Ctrl+Shift+S</b>セッション保存</span>
+  </div>
+</section></div></div>
+    </div>
+  </div>
+  <button class="takeBtn" id="btnMark" title="ここでテイクを区切る（M）"><span class="sk">M</span><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#F07A52" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v16"/><path d="M8 8l-4 4l4 4"/><path d="M16 16l4-4l-4-4"/></svg><span class="st">SPLIT</span></button>
+  <div class="vu">
+    <canvas id="vuCanvas" width="352" height="176"></canvas>
+    <div class="side"><span id="vuSrc">停止中</span><div class="lamp" id="peakLamp"></div><span>PEAK</span></div>
+  </div>
+  <div class="reccol">
+    <button class="rec idle" id="btnRec">● 録音</button>
+    <button class="mon" id="btnMon" title="入力を開いてモニターします（録音の前に）"><span class="ml">モニター</span><span class="md" id="monDev">入力：—</span></button>
+  </div>
+</header>
+
+<section class="card" id="topCard">
+  <div class="dropOv" id="dropOv" hidden><div class="plus">＋</div><div class="dt" id="dropTxt">ここに離すと読み込みます</div></div>
+  <div class="dropHint" id="dropHint"><span>＋　音声ファイルをドラッグ＆ドロップ</span></div>
+  <div class="lanehead">
+    <h2>録音（録りっぱなし）</h2>
+    <span class="spacer"></span>
+    <button class="candClr" id="btnCandClr" hidden title="紫の候補の枠を全部消す">候補を消す</button>
+    <span class="hint" id="topInfo">0:00.0</span>
+  </div>
+  <div class="topwrap"><canvas class="lane" id="topCanvas"></canvas><button class="fitb" id="topFit" title="録音全体を表示">全体</button></div>
+</section>
+</div>
+
+<div class="takesScroll" id="takesScroll">
+<div class="lanehead">
+  <h2>テイク</h2>
+</div>
+<div id="takes"><div class="empty" id="takesEmpty">まだテイクはありません。録音中か録音後に「SPLIT」を押すと、ここに並びます。</div></div>
+<div class="addRow"><button class="addTake" id="btnAddTake" title="上の録音で範囲を選んでいればその範囲で、選んでいなければ空のテイクを作ります">＋ テイクを追加</button><button class="addTake" id="btnBulk" title="1行に1本ずつファイル名を書いて、空の枠をまとめて作ります">まとめて枠を作る</button></div>
+
+
+</div>
+</div>
+<div id="recAlarm" hidden title="クリックで閉じる" onclick="this.hidden=true"></div><div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+const FS = 48000;
+const $ = id => document.getElementById(id);
+const dbToGain = db => Math.pow(10, db / 20);
+const gainToDb = g => g > 0 ? 20 * Math.log10(g) : -Infinity;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const fmt = s => { if (!Number.isFinite(s)) return '—'; const neg = s < 0; s = Math.abs(s); const m = Math.floor(s / 60); return (neg ? '-' : '') + m + ':' + (s - m * 60).toFixed(1).padStart(4, '0'); };
+const fmtS = n => (n / FS).toFixed(1) + '秒';
+function toast(msg, ms = 2600) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), ms); }
+/* recording alarms stay on screen until clicked (a toast can be missed or replaced) */
+function recAlarm(msg) {
+  const el = $('recAlarm'), d = new Date(), p = n => String(n).padStart(2, '0');
+  el._lines = [...(el.hidden ? [] : (el._lines || [])), '・' + msg].slice(-6);
+  el.innerHTML = '<b>録音の注意（クリックで閉じる）</b>' + el._lines.map(x => x.replace(/[<&>]/g, '')).join('\n'); el.hidden = false;
+}
+const isExe = !!window.jmNative;
+const hasFS = isExe || typeof window.showDirectoryPicker === 'function';
+let NI = null;   // exe: { root, dirs:{settings,oke,sessions}, version, sep }
+/* In the exe, files are reached through the app (Node) with the same shape as the browser's folder handles */
+class NBlob {
+  constructor(path, name, size, mtime, a = 0, b = size) { this.path = path; this.name = name; this.size = b - a; this.lastModified = mtime; this._a = a; this._b = b; this._full = (a === 0 && b === size); }
+  async arrayBuffer() { return this._full ? await jmNative.read(this.path) : await jmNative.read(this.path, this._a, this._b); }
+  async text() { return new TextDecoder().decode(await this.arrayBuffer()); }
+  slice(a = 0, b = this.size) { a = Math.max(0, Math.min(a, this.size)); b = Math.max(a, Math.min(b, this.size)); const n = new NBlob(this.path, this.name, 0, this.lastModified, this._a + a, this._a + b); n.size = b - a; n._full = false; return n; }
+}
+class NFile {
+  constructor(path, name) { this.path = path; this.name = name; this.kind = 'file'; }
+  async getFile() { const st = await jmNative.stat(this.path); if (!st) throw new DOMException('not found', 'NotFoundError'); const b = new NBlob(this.path, this.name, st.size, st.mtime); b._full = true; return b; }
+  async createWritable() { const parts = [], self = this; return { async write(d) { parts.push(d); }, async close() { await jmNative.write(self.path, await new Blob(parts).arrayBuffer()); } }; }
+}
+class NDir {
+  constructor(path, name) { this.path = path; this.name = name; this.kind = 'directory'; }
+  j(n) { return this.path + (NI ? NI.sep : '\\') + n; }
+  async getDirectoryHandle(n, o) { const p = this.j(n), st = await jmNative.stat(p); if (!st) { if (!(o && o.create)) throw new DOMException('not found', 'NotFoundError'); await jmNative.mkdir(p); } return new NDir(p, n); }
+  async getFileHandle(n, o) { const p = this.j(n), st = await jmNative.stat(p); if (!st && !(o && o.create)) throw new DOMException('not found', 'NotFoundError'); return new NFile(p, n); }
+  async *entries() { for (const e of await jmNative.list(this.path)) { if (/\.tmp$/.test(e.name)) continue; yield [e.name, e.dir ? new NDir(this.j(e.name), e.name) : new NFile(this.j(e.name), e.name)]; } }
+  async removeEntry(n) { await jmNative.remove(this.j(n)); }
+  async queryPermission() { return 'granted'; }
+  async requestPermission() { return 'granted'; }
+}
+async function recDirOf(d) { return isExe ? await d.getDirectoryHandle('録音', { create: true }) : d; }
+async function recSearchDirs(d) { const out = []; try { out.push(await d.getDirectoryHandle('録音')); } catch (e) {} out.push(d); return out; }
+
+/* ================= settings ================= */
+const DEF = {
+  inCh: '0', peakThr: -1, inId: '', outId: '',
+  bpm: 120, t1: 0, bgmBase: 0,
+  delayBeats: 0.25, introMin: 0, remMin: 3.2, remMax: 5.0,
+  preDb: -1, duckDb: -7, postDb: -1.5, dnBefore: 0.3, dnAfter: 0.4, upBefore: 0.6, upAfter: 0.6,
+  fnTemplate: '', narTarget: -23.5, peakCeil: -1, padHead: 0, padTail: 0, uiZoom: 0.9, endPad: 0, startPad: 0.03, startGap: 2.0, editZoom: 4, dblZoom: 1
+};
+let S = Object.assign({}, DEF);
+try { Object.assign(S, JSON.parse(localStorage.getItem('jm2_settings') || '{}')); } catch (e) {}
+S.fnTemplate = '';
+if (S.narTarget == null) S.narTarget = -24.5;
+S.normMode = 'none';
+if (!(S.ver >= 3)) {   // v3 house defaults
+  Object.assign(S, { bpm: 120, delayBeats: 0.25, introMin: 0, remMin: 3.2, remMax: 5.0, preDb: -1, duckDb: -7, postDb: -1.5, dnBefore: 0.3, dnAfter: 0.4, upBefore: 0.6, upAfter: 0.6, narTarget: -23.5, bgmBase: 0, ver: 3 });
+  try { localStorage.setItem('jm2_settings', JSON.stringify(S)); } catch (e) {}
+}
+if (!(S.ver >= 4)) { S.endPad = 0; S.ver = Math.max(S.ver || 0, 4); try { localStorage.setItem('jm2_settings', JSON.stringify(S)); } catch (e) {} }   // v4: END right at the last word
+if (!(S.ver >= 5)) { S.startPad = 0.05; S.startGap = 2.0; S.ver = Math.max(S.ver || 0, 5); try { localStorage.setItem('jm2_settings', JSON.stringify(S)); } catch (e) {} }   // v5: 編集なし start rule
+if (!(S.ver >= 6)) { S.startPad = 0.03; S.ver = Math.max(S.ver || 0, 6); try { localStorage.setItem('jm2_settings', JSON.stringify(S)); } catch (e) {} }   // v6: START exactly 30 ms before the voice
+if (!(S.ver >= 2)) { S.bgmBase = 0; S.introMin = 1.0; S.remMin = 1.0; S.remMax = 4.0; S.ver = 2; try { localStorage.setItem('jm2_settings', JSON.stringify(S)); } catch (e) {} }
+function saveSettings() { try { localStorage.setItem('jm2_settings', JSON.stringify(S)); } catch (e) {} scheduleAutosave(); }
+document.querySelectorAll('[data-k]').forEach(el => {
+  const k = el.dataset.k; el.value = S[k];
+  el.addEventListener('change', () => {
+    let v = el.value;
+    if (el.type === 'number') { v = parseFloat(v); if (!Number.isFinite(v)) { el.value = S[k]; return; } }
+    S[k] = v; saveSettings();
+    if (k === 'inCh' && mic.node) mic.node.port.postMessage({ ch: +S.inCh });
+    if (k === 'inCh') updRecUI();
+  });
+});
+function refreshSettingFields() { document.querySelectorAll('[data-k]').forEach(el => el.value = S[el.dataset.k]); }
+
+/* ================= IndexedDB for handles ================= */
+const IDB = {
+  db: null,
+  async open() { if (this.db) return this.db; this.db = await new Promise((res, rej) => { const r = indexedDB.open('jingle-maker-2', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); return this.db; },
+  async get(k) { try { const db = await this.open(); return await new Promise((res, rej) => { const r = db.transaction('kv').objectStore('kv').get(k); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); } catch (e) { return null; } },
+  async set(k, v) { try { const db = await this.open(); await new Promise((res, rej) => { const t = db.transaction('kv', 'readwrite'); t.objectStore('kv').put(v, k); t.oncomplete = res; t.onerror = () => rej(t.error); }); } catch (e) {} }
+};
+async function verifyPerm(h, mode) {
+  if (!h) return false;
+  try { if (await h.queryPermission({ mode }) === 'granted') return true; return (await h.requestPermission({ mode })) === 'granted'; } catch (e) { return false; }
+}
+let workDir = null;
+async function pickDir(key, mode) {
+  if (!hasFS) { toast('このブラウザではフォルダを選べません（Chromeで開いてください）'); return null; }
+  try { const h = await window.showDirectoryPicker({ id: key, mode }); await IDB.set(key, h); return h; } catch (e) { return null; }
+}
+/* HTML: one 作業フォルダ decides everything (same layout as the exe folder):
+     作業フォルダ\セッション\<session>\録音, \ジングル, _自動保存.json
+     作業フォルダ\ジングルオケ\ */
+let rootDir = null;
+async function setupRoot(root) {
+  rootDir = root; await IDB.set('rootDir', root);
+  workDir = await root.getDirectoryHandle('セッション', { create: true });
+  const oke = await root.getDirectoryHandle('ジングルオケ', { create: true });
+  await loadBgmDir(oke);
+  if (!bgm.list.length) $('bgmName').textContent = '作業フォルダの「ジングルオケ」にオケのファイルを入れてください';
+  updDirNames();
+}
+function folderDialog(savedName) {
+  return new Promise(res => {
+    const back = document.createElement('div'); back.className = 'modalBack';
+    const d = document.createElement('div'); d.className = 'menu dialog wide';
+    d.innerHTML = `<div class="dmsg"><b>作業フォルダ</b><br>${savedName ? `前回の作業フォルダ「${savedName.replace(/[<&>]/g, '')}」を使います。` : '録音・セッション・完成したジングルを入れるフォルダを選んでください。中に「セッション」と「ジングルオケ」のフォルダを作ります（すでにあればそのまま使います）。'}</div>
+      <div class="drow">${savedName ? '<button class="danger" data-a="none">フォルダなしで使う</button><button data-a="pick">別のフォルダを選ぶ</button><button class="primary" data-a="use">このフォルダで始める</button>' : '<button class="danger" data-a="none">フォルダなしで使う</button><button class="primary" data-a="pick">フォルダを選ぶ</button>'}</div>`;
+    back.appendChild(d); document.body.appendChild(back);
+    d.querySelectorAll('button').forEach(b => b.onclick = () => { back.remove(); res(b.dataset.a); });
+  });
+}
+async function chooseRoot(forcePick) {
+  if (isExe || !hasFS) return false;
+  for (;;) {
+    const saved = forcePick ? null : (await IDB.get('rootDir'));
+    const act = await folderDialog(saved ? saved.name : null); forcePick = false;
+    if (act === 'none') { updDirNames(); return false; }
+    let h = null;
+    if (act === 'use') { if (await verifyPerm(saved, 'readwrite')) h = saved; else toast('フォルダへのアクセスが許可されませんでした'); }
+    else { try { h = await window.showDirectoryPicker({ id: 'rootDir', mode: 'readwrite' }); } catch (e) {} }
+    if (h) { try { await setupRoot(h); return true; } catch (e) { toast('このフォルダには書き込めません：' + (e && e.message || e), 4000); } }
+  }
+}
+async function ensureWorkDir() {
+  if (isExe) return workDir;
+  if (!hasFS) return null;
+  if (workDir && await verifyPerm(workDir, 'readwrite')) return workDir;
+  return (await chooseRoot()) ? workDir : null;
+}
+function updDirNames() {
+  $('workDirName').textContent = isExe ? $('workDirName').textContent : (rootDir ? rootDir.name + '（中の「セッション」と「ジングルオケ」を使います）' : '未設定（完成したジングルはダウンロードになります）');
+}
+$('btnWorkDir').onclick = async () => { if (!isExe) { if (rec.on) { toast('録音中は変えられません'); return; } await chooseRoot(true); } };
+async function writeFile(dir, name, data) {
+  const fh = await dir.getFileHandle(name, { create: true });
+  const w = await fh.createWritable(); await w.write(data); await w.close();
+}
+function download(name, blob) {
+  const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 15000);
+}
+
+/* ================= audio context & devices ================= */
+let actx = null, outBus = null, analyser = null;
+function ctx() {
+  if (!actx) {
+    actx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: FS, latencyHint: 'interactive' });
+    outBus = actx.createGain(); analyser = actx.createAnalyser(); analyser.fftSize = 2048;
+    outBus.connect(analyser); analyser.connect(actx.destination);
+    if (S.outId && actx.setSinkId) actx.setSinkId(S.outId).catch(() => {});
+  }
+  return actx;
+}
+async function listDevices() {
+  try {
+    const d = await navigator.mediaDevices.enumerateDevices();
+    const ins = d.filter(x => x.kind === 'audioinput'), outs = d.filter(x => x.kind === 'audiooutput');
+    const esc = s => s.replace(/[<&>"]/g, '');
+    $('selIn').innerHTML = '<option value="">既定</option>' + ins.map((x, i) => `<option value="${x.deviceId}">${esc(x.label || '入力' + (i + 1))}</option>`).join('');
+    $('selOut').innerHTML = '<option value="">既定</option>' + outs.map((x, i) => `<option value="${x.deviceId}">${esc(x.label || '出力' + (i + 1))}</option>`).join('');
+    $('selIn').value = ins.some(x => x.deviceId === S.inId) ? S.inId : '';
+    $('selOut').value = outs.some(x => x.deviceId === S.outId) ? S.outId : '';
+    if (typeof updRecUI === 'function') updRecUI();
+  } catch (e) {}
+}
+$('selIn').onchange = async () => { S.inId = $('selIn').value; saveSettings(); if (!rec.on && mon.on) { if (mic.opening) await mic.opening; closeMic(); if (!await openMic()) mon.on = false; } updRecUI(); };   // while monitoring, the meter follows the new input at once
+$('selOut').onchange = async () => {
+  S.outId = $('selOut').value; saveSettings();
+  if (ctx().setSinkId) { try { await actx.setSinkId(S.outId || ''); } catch (e) { toast('出力デバイスを切り替えられませんでした'); } }
+  else toast('このブラウザは出力デバイスの切り替えに対応していません');
+};
+listDevices();
+
+/* ================= master recording buffer ================= */
+const M = {
+  buf: new Float32Array(FS * 60), len: 0,
+  peaks: new Float32Array(Math.ceil(FS * 60 / 256)),
+  append(x) {
+    if (this.len + x.length > this.buf.length) {
+      const nb = new Float32Array(Math.max(this.buf.length * 2, this.len + x.length)); nb.set(this.buf.subarray(0, this.len)); this.buf = nb;
+      const np = new Float32Array(Math.ceil(nb.length / 256) + 1); np.set(this.peaks); this.peaks = np;
+    }
+    const s = this.len; this.buf.set(x, s); this.len += x.length;
+    for (let b = Math.floor(s / 256); b * 256 < this.len; b++) {
+      let m = 0; const e = Math.min(this.len, (b + 1) * 256);
+      for (let i = b * 256; i < e; i++) { const a = Math.abs(this.buf[i]); if (a > m) m = a; }
+      this.peaks[b] = m;
+    }
+  },
+  setAll(x) { clearCands(); this.buf = new Float32Array(Math.max(x.length, FS)); this.len = 0; this.peaks = new Float32Array(Math.ceil(this.buf.length / 256) + 1); this.append(x); },
+  peak(i0, i1) {
+    i0 = Math.max(0, Math.floor(i0)); i1 = Math.min(this.len, Math.ceil(i1));
+    if (i1 <= i0) return 0;
+    let m = 0;
+    if (i1 - i0 >= 768) { for (let b = Math.floor(i0 / 256); b < Math.ceil(i1 / 256); b++) if (this.peaks[b] > m) m = this.peaks[b]; }
+    else for (let i = i0; i < i1; i++) { const a = Math.abs(this.buf[i]); if (a > m) m = a; }
+    return m;
+  }
+};
+
+/* ================= mic & recording ================= */
+const WORKLET = `class JMRec extends AudioWorkletProcessor{constructor(o){super();this.ch=(o.processorOptions&&o.processorOptions.ch)||0;this.b=new Float32Array(2400);this.n=0;this.port.onmessage=e=>{if(e.data&&e.data.ch!=null)this.ch=e.data.ch;};}
+process(inp){const i=inp[0];if(i&&i.length){const x=i[Math.min(this.ch,i.length-1)];for(let k=0;k<x.length;k++){this.b[this.n++]=x[k];if(this.n===2400){this.port.postMessage(this.b,[this.b.buffer]);this.b=new Float32Array(2400);this.n=0;}}}return true;}}
+registerProcessor('jm-rec',JMRec);`;
+let workletLoaded = false;
+const mic = { stream: null, src: null, node: null, sink: null, inAbs: 0, inN: 0, inPeak: 0 };
+const rec = { on: false, t0: 0, dir: null, written: 0, chunkNo: 0, writeChain: Promise.resolve(), timer: 0 };
+/* only one input at a time: a second call while one is opening (start-up vs. 録音 pressed quickly) waits for the first */
+function openMic() {
+  if (mic.stream) return Promise.resolve(true);
+  if (!mic.opening) mic.opening = openMicNow().finally(() => { mic.opening = null; });
+  return mic.opening;
+}
+async function openMicNow() {
+  const c = ctx(); c.resume().catch(() => {});   // don't wait: the input works without the playback side running
+  try {
+    const a = { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: { ideal: 2 } };
+    if (S.inId) a.deviceId = { exact: S.inId };
+    mic.stream = await navigator.mediaDevices.getUserMedia({ audio: a });
+  } catch (e) { toast('マイク（入力）を使う許可が必要です', 4000); return false; }
+  if (!workletLoaded) {
+    try { await c.audioWorklet.addModule('data:application/javascript;base64,' + btoa(WORKLET)); workletLoaded = true; }
+    catch (e) { try { await c.audioWorklet.addModule(URL.createObjectURL(new Blob([WORKLET], { type: 'application/javascript' }))); workletLoaded = true; } catch (e2) {} }
+  }
+  try { const st = mic.stream.getAudioTracks()[0].getSettings(); srcInfo.input = st.sampleRate ? (st.sampleRate !== FS ? `入力 ${fmtRate(st.sampleRate)} → 48kHzに変換中` : '入力 48kHz') : ''; } catch (e) { srcInfo.input = ''; }
+  if (await openDirectCapture()) { listDevices(); return true; }
+  mic.src = c.createMediaStreamSource(mic.stream);
+  if (workletLoaded) {
+    mic.node = new AudioWorkletNode(c, 'jm-rec', { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [1], channelCount: 2, channelCountMode: 'explicit', channelInterpretation: 'discrete', processorOptions: { ch: +S.inCh } });
+    mic.node.port.onmessage = e => onInput(e.data);
+  } else {
+    // fallback (older browsers): ScriptProcessor on the main thread
+    mic.node = c.createScriptProcessor(4096, 2, 1); mic.node.port = { postMessage() {} };
+    mic.node.onaudioprocess = ev => { const ib = ev.inputBuffer; onInput(ib.getChannelData(Math.min(+S.inCh, ib.numberOfChannels - 1)).slice()); };
+  }
+  mic.sink = c.createGain(); mic.sink.gain.value = 0;
+  mic.src.connect(mic.node); mic.node.connect(mic.sink); mic.sink.connect(c.destination);
+  listDevices();
+  return true;
+}
+/* Direct capture: read the input track itself in a worker (MediaStreamTrackProcessor).
+   This does not go through the AudioContext, whose clock is the OUTPUT device, so a
+   different output device or a busy main thread cannot drop input audio. */
+const CAP_WORKER = `let rd=null,ch=0,sr=0,rs=null,base=null,pos=0,ref=0,pend=null;const OUT=48000;
+onmessage=e=>{const d=e.data;if(d.ch!=null)ch=d.ch;if(d.stream){rd=d.stream.getReader();pump();}if(d.stop&&rd){rd.cancel().catch(()=>{});}};
+/* streaming windowed-sinc resampler (only used when the device is not 48 kHz) */
+function mkRS(fin){const H=32,P=1024,r=OUT/fin,fc=0.97*Math.min(1,r)/2,tab=new Float32Array((P+1)*2*H);
+const I0=x=>{let s=1,t=1;for(let k=1;k<30;k++){t*=(x/(2*k))**2;s+=t;}return s;},B=9,i0b=I0(B);
+for(let p=0;p<=P;p++)for(let j=0;j<2*H;j++){const x=j-H+1-p/P;const w=Math.abs(x)>=H?0:I0(B*Math.sqrt(1-(x/H)**2))/i0b;tab[p*2*H+j]=(x===0?2*fc:Math.sin(2*Math.PI*fc*x)/(Math.PI*x))*w;}
+let hist=new Float32Array(0),pos=H-1;const step=fin/OUT;
+return x=>{const h=new Float32Array(hist.length+x.length);h.set(hist);h.set(x,hist.length);const out=[];
+while(pos+H<h.length){const i=Math.floor(pos),fr=pos-i,pf=fr*P,pi=Math.floor(pf),a=pf-pi,o0=pi*2*H,o1=o0+2*H;let s=0;
+for(let j=0;j<2*H;j++){const c=tab[o0+j]+(tab[o1+j]-tab[o0+j])*a;s+=h[i-H+1+j]*c;}out.push(s);pos+=step;}
+const keep=Math.floor(pos)-H+1;hist=h.slice(keep);pos-=keep;return Float32Array.from(out);};}
+async function pump(){let b=new Float32Array(2400),n=0;
+for(;;){let r;try{r=await rd.read();}catch(e){break;}if(r.done)break;const a=r.value;
+try{const f=a.numberOfFrames,c=Math.min(ch,a.numberOfChannels-1);
+if(a.sampleRate!==sr){sr=a.sampleRate;rs=sr===OUT?null:mkRS(sr);postMessage({rate:sr});base=null;}
+/* lost input = the device clock jumps ahead of the samples we got, and STAYS ahead.
+   A single late timestamp (the PC was busy) comes back on the next blocks and is not a loss. */
+if(base===null){base=a.timestamp;pos=0;ref=0;pend=null;}
+const d=(a.timestamp-base)/1e6-pos/sr;
+if(pend){if(Math.abs(d-pend.d)<0.003){if(++pend.n>=300){postMessage({gap:Math.round((pend.d-ref)*OUT),late:3,drift:pend.d,ref:ref,pos:pos,sr:sr});ref=pend.d;pend=null;}}else if(Math.abs(d-ref)<0.003){pend=null;}else{pend={d:d,n:0};}}
+else if(d-ref>0.004){pend={d:d,n:0};}
+else if(Math.abs(d-ref)<0.003){ref+=(d-ref)*0.01;}
+pos+=f;
+let x=new Float32Array(f);a.copyTo(x,{planeIndex:c,format:'f32-planar'});if(rs)x=rs(x);
+for(let k=0;k<x.length;k++){b[n++]=x[k];if(n===2400){postMessage(b,[b.buffer]);b=new Float32Array(2400);n=0;}}}
+catch(e){postMessage({err:String(e)});}finally{a.close();}}}`;
+let capWorkerUrl = null;
+async function openDirectCapture() {
+  if (!window.MediaStreamTrackProcessor) return false;
+  try {
+    const track = mic.stream.getAudioTracks()[0];
+    const proc = new MediaStreamTrackProcessor({ track, maxBufferSize: 600 });   // 600 frames ≈ 6 s of slack
+    if (!capWorkerUrl) capWorkerUrl = URL.createObjectURL(new Blob([CAP_WORKER], { type: 'application/javascript' }));
+    let w; try { w = new Worker(capWorkerUrl); } catch (e) { w = new Worker('data:application/javascript;base64,' + btoa(CAP_WORKER)); }
+    const ok = await new Promise(res => {
+      const to = setTimeout(() => res(false), 3000);
+      w.onmessage = e => {
+        const d = e.data;
+        if (d instanceof Float32Array) { onInput(d); return; }
+        if (d.rate) {
+          clearTimeout(to);
+          srcInfo.input = d.rate !== FS ? `入力 ${fmtRate(d.rate)} → 48kHzに変換中` : '入力 48kHz'; if (typeof updSrcInfo === 'function') updSrcInfo();
+          res(true); return;
+        }
+        if (d.gap) captureGap(d.gap, d.late || 0, d);
+        if (d.err) console.warn('capture', d.err);
+      };
+      w.postMessage({ ch: +S.inCh });
+      w.postMessage({ stream: proc.readable }, [proc.readable]);
+    });
+    if (!ok) { try { w.postMessage({ stop: 1 }); setTimeout(() => w.terminate(), 200); } catch (e) {} return false; }
+    mic.node = { port: w, disconnect() {} };   // port.postMessage({ch}) keeps working
+    mic.worker = w; mic.direct = true;
+    return true;
+  } catch (e) { console.warn('direct capture unavailable', e); return false; }
+}
+/* the input device itself skipped audio (driver/USB). Warn so the take can be checked. */
+const APP_VER = '1.4.5';
+/* lost input: Windows/Chrome hand audio over in 10 ms blocks, so a real loss is 10 ms or more.
+   A shorter step is Chrome re-timing its clock (no audio missing): it is only written to the log. */
+const GAP_MIN_MS = 8;
+function captureGap(n, late, info) {
+  // a loss is confirmed 3 s after it happened, so one just before 停止 still belongs to that recording
+  const e = rec.on ? rec.entry : (rec.lastEntry && performance.now() - rec.stopAt < (late || 0) * 1000 + 1000 ? rec.lastEntry : null);
+  if (!e) return;
+  const endPos = rec.on ? M.len : e.start + e.len;
+  const at = Math.max(0, (endPos - e.start) / FS - (rec.on ? (late || 0) : (late || 0) - (performance.now() - rec.stopAt) / 1000)), ms = Math.round(n / FS * 1000);
+  const pos = Math.round(e.start + at * FS), where = gapWhere(pos), real = ms >= GAP_MIN_MS;
+  writeLog([real ? '入力の途切れ（警告を出しました）' : '入力の時刻のずれ（8ms未満なので、時刻の付け直しとみなして警告は出していません）',
+    `  録音ファイル ${e.file}　録音の ${fmt(at)} 付近（${where}）`,
+    `  ずれ ${ms}ms（${n}サンプル）　受け取った音 ${info && info.pos != null ? info.pos + 'サンプル' : '—'}　ずれが続いた時間 ${late || 0}秒以上`,
+    `  時刻のずれ ${info && info.drift != null ? (info.drift * 1000).toFixed(2) : '—'}ms（直前の基準 ${info && info.ref != null ? (info.ref * 1000).toFixed(2) : '—'}ms）`,
+    `  入力 ${monDevLabel()}　${info && info.sr ? fmtRate(info.sr) : ''}`]);
+  if (!real) return;
+  (e.gaps = e.gaps || []).push({ at: +at.toFixed(2), ms, pos });
+  topDirty = true; scheduleAutosave();
+  recAlarm(`入力の音が ${ms}ms 途切れました（録音の ${fmt(at)} 付近、${where}）。上の波形の赤い印のあたりを聞いて確認してください`);
+}
+function gapWhere(pos) {
+  const ms = marks.slice().sort((a, b) => a.pos - b.pos); let k = 0; while (k < ms.length && ms[k].pos <= pos) k++;
+  return k === 0 ? (ms.length ? '区切り1の前' : '区切りの前') : `区切り${k}のあと`;
+}
+/* _ログ.txt in the session folder: written only when something happens */
+function writeLog(lines) {
+  const d = new Date(), p = n => String(n).padStart(2, '0');
+  const head = `[${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}] JingleMaker ${isExe && NI ? NI.version : APP_VER}（${isExe ? 'exe版' : 'HTML版 ' + (navigator.userAgent.match(/(Edg|Chrome)\/[\d.]+/) || [''])[0]}）`;
+  const text = [head, ...lines, ''].join('\r\n');
+  logBuf.push(text);
+  if (!sess.dir) return;
+  const dir = sess.dir, add = logBuf.splice(0).join('\r\n');
+  rec.writeChain = rec.writeChain.then(async () => {
+    let old = ''; try { old = await (await (await dir.getFileHandle('_ログ.txt')).getFile()).text(); } catch (e) {}
+    await writeFile(dir, '_ログ.txt', old + add + '\r\n');
+  }).catch(() => {});
+}
+let logBuf = [];
+function closeMic() {
+  if (mic.worker) { try { mic.worker.postMessage({ stop: 1 }); const w = mic.worker; setTimeout(() => w.terminate(), 300); } catch (e) {} mic.worker = null; mic.direct = false; }
+  try { mic.src && mic.src.disconnect(); mic.node && mic.node.disconnect(); } catch (e) {}
+  if (mic.stream) mic.stream.getTracks().forEach(t => t.stop());
+  mic.stream = mic.src = mic.node = null;
+}
+function onInput(x) {
+  let s = 0, p = 0; for (let i = 0; i < x.length; i++) { const a = Math.abs(x[i]); s += a; if (a > p) p = a; }
+  mic.inAbs += s; mic.inN += x.length; if (p > mic.inPeak) mic.inPeak = p;
+  mic.lastIn = performance.now();
+  if (rec.on) { M.append(x); topDirty = true; }
+}
+/* browser version: keep the screen (and PC) awake while recording, and warn before the tab is closed */
+let wakeLock = null;
+async function webKeepAwake(on) {
+  try {
+    if (on && navigator.wakeLock && !wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); }
+    if (!on && wakeLock) { await wakeLock.release(); wakeLock = null; }
+  } catch (e) {}
+}
+document.addEventListener('visibilitychange', () => { if (!isExe && rec.on && document.visibilityState === 'visible') webKeepAwake(true); });
+window.addEventListener('beforeunload', e => { if (isExe) return; if (M.len) { clearTimeout(autosaveT); saveSessionJson(); } if (rec.on || M.len) { e.preventDefault(); e.returnValue = ''; } });
+/* monitor (REC STANDBY): the input is opened on purpose, and 録音 only works from here */
+const mon = { on: false };
+function monDevLabel() { const sel = $('selIn'); const name = sel.selectedIndex > 0 ? sel.options[sel.selectedIndex].text : '既定の入力'; return name + '　ch' + (+S.inCh + 1); }
+function updRecUI() {
+  const b = $('btnRec'), m = $('btnMon');
+  b.classList.toggle('idle', !mon.on && !rec.on); b.classList.toggle('standby', mon.on && !rec.on);
+  if (!rec.on) b.innerHTML = mon.on ? '● 録音<span class="rs">スタンバイ</span>' : '● 録音';
+  m.classList.toggle('on', mon.on); m.querySelector('.ml').textContent = mon.on ? 'モニター中' : 'モニター';
+  $('monDev').textContent = monDevLabel(); m.title = (mon.on ? 'モニター中：' : '入力：') + monDevLabel();
+}
+$('btnMon').onclick = async () => {
+  if (rec.on) { toast('録音中はモニターを切れません'); return; }
+  if (mon.on) { closeMic(); mon.on = false; updRecUI(); return; }
+  if (!isExe) { const d = await ensureWorkDir(); if (!d) { toast('先に作業フォルダを選んでください（設定 → 保存）', 4000); return; } }
+  if (await openMic()) mon.on = true;
+  updRecUI();
+};
+async function startRec() {
+  if (!mon.on) { toast('モニターをオンにして、入力デバイスを確認してください', 4000); return; }
+  Player.stop();
+  const appending = M.len > 0;   // same session while the app stays open: add a new recording file
+  const dir = await ensureWorkDir();
+  if (!mic.stream) { if (!await openMic()) return; }
+  if (!appending) { const keep = takes.filter(t => !t.segs.length && !t.live); newSession(); takes = keep; }
+  if (dir && !sess.dir) {
+    try {
+      const st = sessStamp(); sess.dir = await dir.getDirectoryHandle(appending && sess.name ? safeName(sess.name) : st, { create: true });
+      if (appending && !sess.recs.length) {   // e.g. a loaded WAV that was never saved: keep it as the first recording
+        const rd = await recDirOf(sess.dir), f = await uniqueName(rd, 'rec_' + st + '_読込.wav');
+        await writeFile(rd, f, await wavBlob([M.buf.slice(0, M.len)], 24));
+        sess.recs.push({ file: f, start: 0, len: M.len, done: true });
+      }
+    } catch (e) { sess.dir = null; toast('作業フォルダに書き込めません。メモリだけで録音します', 4000); }
+  } else if (!dir) toast('作業フォルダ未設定のため、録音は保存されません（後で「保存」できます）', 4500);
+  rec.dir = sess.dir ? await recDirOf(sess.dir) : null;
+  if (sess.dir) { try { await writeFile(sess.dir, '_録音中.txt', 'recording'); } catch (e) {} }
+  if (!sess.name) sess.name = sess.dir ? sess.dir.name : sessStamp();
+  if (appending) M.append(new Float32Array(Math.round(0.5 * FS)));   // short gap between recordings
+  const entry = { file: 'rec_' + sessStamp() + '.wav', start: M.len, len: 0, done: false, idx: (sess.recs.length ? Math.max(...sess.recs.map(r => r.idx || 0)) : 0) + 1 };
+  sess.recs.push(entry); rec.entry = entry;
+  startLiveTake(entry.start, null); rebuildTakeDom();
+  updSessName();
+  rec.on = true; rec.t0 = performance.now(); rec.written = M.len; rec.chunkNo = 0; rec.writeChain = Promise.resolve();
+  if (isExe) jmNative.setRecording(true);
+  else webKeepAwake(true);
+  rec.timer = setInterval(flushChunk, 5000); rec.writeErrShown = false; rec.dogShown = false; mic.lastIn = performance.now();
+  clearInterval(rec.dog); rec.dog = setInterval(() => {
+    if (!rec.on) return;
+    const quiet = performance.now() - (mic.lastIn || 0), tr = mic.stream && mic.stream.getAudioTracks()[0];
+    const dead = !tr || tr.readyState === 'ended';
+    if (dead) { inputLost(); return; }
+    if (quiet > 1500 && !rec.dogShown) { rec.dogShown = true; recAlarm('入力から音が届いていません（録音 ' + fmt((M.len - rec.entry.start) / FS) + ' から）。ケーブル・USB・入力デバイスを確認してください'); }
+    if (quiet < 300 && !dead) rec.dogShown = false;
+  }, 500);
+  $('btnRec').classList.add('on'); updRecUI();
+  topDirty = true; scheduleAutosave();
+}
+function flushChunk() {
+  if (!rec.dir || !rec.entry) return;
+  const from = rec.written, to = M.len; if (to <= from) return;
+  rec.written = to; const no = ++rec.chunkNo, idx = rec.entry.idx;
+  rec.entry.len = M.len - rec.entry.start;
+  const data = M.buf.slice(from, to);
+  rec.writeChain = rec.writeChain.then(() => writeFile(rec.dir, `chunk_${idx}_${String(no).padStart(5, '0')}.f32`, data)).catch(() => {
+    if (!rec.writeErrShown) { rec.writeErrShown = true; recAlarm('録音の途中保存に失敗しました。録音は続いています（音はメモリにあります）。空き容量と保存先を確認し、止めたあと保存できたか確認してください'); }
+  });
+}
+/* the input device went away (USB pulled etc.): the track is dead and cannot come back, so stop the
+   recording (everything up to that moment is kept and saved) and turn the monitor off. Reconnecting is
+   left to the user (monitor on → pick the device), because Windows may have switched the default input. */
+async function inputLost() {
+  if (!rec.on || rec.lost) return; rec.lost = true;
+  const e = rec.entry, at = e ? (M.len - e.start) / FS : 0, dev = monDevLabel();
+  writeLog(['入力デバイスが外れたので、録音を自動で止めました', `  録音ファイル ${e ? e.file : '—'}　録音の ${fmt(at)} まで録れています（${gapWhere(M.len)}）`, `  入力 ${dev}`]);
+  try { await stopRec(); } finally { rec.lost = false; }
+  closeMic(); mon.on = false; updRecUI();
+  recAlarm(`入力デバイスが外れたので、録音を止めました。外れるまで（録音の ${fmt(at)} まで）は保存しています。つなぎ直したら、モニターを入れ直して入力を選んでから録音してください`);
+}
+async function stopRec() {
+  rec.on = false; clearInterval(rec.timer); clearInterval(rec.dog);
+  if (isExe) jmNative.setRecording(false);
+  else webKeepAwake(false);
+  const lt = liveTake();
+  if (lt) {
+    const L = M.len - lt.segs[0][0];
+    if (L < 2 * FS && lt.start == null && !(lt.flags && lt.flags.length)) {   // tiny tail after the last SPLIT: drop it (a prepared slot goes back to empty)
+      if (lt.slot) { lt.segs = []; lt.live = false; lt.linked = null; lt.autoView = false; lt.cache = null; } else takes = takes.filter(t => t !== lt);
+    }
+    else { finalizeLive(lt, M.len, null); fitAmp(lt); autoEnd(lt); autoLevel(lt); }
+    rebuildTakeDom();
+  }
+  undoStack = []; redoStack = [];
+  $('btnRec').classList.remove('on'); updRecUI();   // back to standby: the monitor stays on
+  flushChunk();
+  const entry = rec.entry; if (entry) entry.len = M.len - entry.start;
+  if (rec.dir && entry) {
+    const dir = rec.dir;
+    rec.writeChain = rec.writeChain.then(async () => {
+      entry.file = await uniqueName(dir, entry.file);
+      await writeFile(dir, entry.file, await wavBlob([M.buf.slice(entry.start, entry.start + entry.len)], 24));
+      entry.done = true;
+      const olds = []; for await (const [name] of dir.entries()) if (new RegExp('^chunk_' + entry.idx + '_\\d+\\.f32$').test(name)) olds.push(name);
+      for (const name of olds) { try { await dir.removeEntry(name); } catch (e) {} }
+      if (sess.dir) { try { await sess.dir.removeEntry('_録音中.txt'); } catch (e) {} }
+      saveSessionJson();
+    }).catch(() => recAlarm('録音ファイル（WAV）の保存に失敗しました。アプリを閉じずに「保存」をもう一度試してください。途中保存のファイルは消していません'));
+  }
+  if (entry && entry.gaps && entry.gaps.length) {
+    const g = entry.gaps; setTimeout(() => toast(`この録音で入力の途切れが ${g.length} 回ありました：` + g.slice(0, 5).map(x => fmt(x.at) + '（' + x.ms + 'ms）').join('、') + (g.length > 5 ? ' ほか' : ''), 9000), 400);
+  }
+  rec.lastEntry = rec.entry; rec.stopAt = performance.now();
+  rec.entry = null;
+  scheduleAutosave();
+  topDirty = true;
+}
+$('btnCandClr').onclick = () => clearCands();
+$('btnRec').onclick = async () => { if (rec.on) { if (await confirmBox('録音を止めますか？', '止める', '続ける')) stopRec(); } else startRec(); };
+
+/* ================= session ================= */
+const sess = { dir: null, name: '', created: '', recs: [], lastSave: '' };
+let marks = [];   // {id,pos}
+let takes = [];   // see newTake
+let markSeq = 1, takeSeq = 1;
+function sessStamp() { const d = new Date(), p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`; }
+function newSession() {
+  try { localStorage.removeItem('jm_open'); } catch (e) {}
+  M.setAll(new Float32Array(0)); M.len = 0;
+  marks = []; takes = []; markSeq = 1; takeSeq = 1; undoStack = []; redoStack = [];
+  topL.cursor = 0; topL.sel = null; topL.stopPos = null; topL.cursorMoved = true; topL.fit = true; topL.view = null;
+  sess.dir = null; sess.name = ''; sess.created = new Date().toISOString(); sess.recs = []; sess.lastSave = '';
+  rebuildTakeDom(); topDirty = true;
+}
+function updSessName() { $('sessName').textContent = sess.name ? (sess.name + (sess.lastSave ? ' ／ ' + sess.lastSave : '') + (sess.dir ? '' : '（未保存）')) : 'セッションなし'; $('sessName').title = $('sessName').textContent; }
+function serialize() {
+  return { app: 'jingle-maker', version: 3, created: sess.created, recs: sess.recs.map(r => ({ file: r.file, start: r.start, len: r.len, done: r.done, idx: r.idx, gaps: r.gaps || [] })), sampleRate: FS, length: M.len,
+    marks, markSeq, takeSeq,
+    takes: takes.map(t => ({ id: t.id, name: t.name, segs: t.segs, start: t.start, end: t.end, gain: t.gain, leveled: !!t.leveled, autoLv: !!t.autoLv, flags: t.flags || [], slot: !!t.slot, linked: t.linked, edited: t.edited, kAdj: t.kAdj, vAdj: t.vAdj, fileName: t.fileName,
+      made: t.made ? { file: t.made.file, variant: t.made.variant, lkfs: t.made.lkfs, peak: t.made.peak, dur: t.made.dur } : null })),
+    settings: S };
+}
+let autosaveT = 0;
+const AUTOSAVE = '_自動保存.json';
+async function fileExists(dir, name) { try { await dir.getFileHandle(name); return true; } catch (e) { return false; } }
+async function uniqueName(dir, name) {
+  if (!await fileExists(dir, name)) return name;
+  const m = name.match(/^(.*?)(\.[^.]+)?$/); for (let i = 2; ; i++) { const n = `${m[1]}_${i}${m[2] || ''}`; if (!await fileExists(dir, n)) return n; }
+}
+const safeName = n => n.replace(/[\\/:*?"<>|]/g, '_').trim();
+function scheduleAutosave() { clearTimeout(autosaveT); autosaveT = setTimeout(saveSessionJson, 800); }
+async function saveSessionJson() {
+  // auto-save goes to its own file; it never touches the sessions saved by name
+  if (!sess.dir) return;
+  try { if (!isExe && M.len) localStorage.setItem('jm_open', JSON.stringify({ name: sess.dir.name, t: Date.now() })); } catch (e) {}
+  const data = JSON.stringify(serialize());
+  rec.writeChain = rec.writeChain.then(() => writeFile(sess.dir, AUTOSAVE, data)).catch(() => {});
+}
+async function saveSessionManual() {
+  if (!M.len) { toast('保存するものがありません'); return false; }
+  if (rec.on) { toast('録音を止めてから保存してください'); return false; }
+  const name = await promptBox('セッションに名前を付けて保存', sess.lastSave || sess.name || sessStamp());
+  if (!name) return false;
+  const fname = safeName(name) + '.json';
+  if (!hasFS) { download(fname, new Blob([JSON.stringify(serialize())], { type: 'application/json' })); toast('このブラウザではフォルダに保存できないため、編集データだけダウンロードしました', 4000); return true; }
+  if (!await ensureSessionStored()) return false;
+  if (await fileExists(sess.dir, fname)) {
+    if (!await confirmBox(`「${safeName(name)}」はもうあります。上書きしますか？`, '上書きする', 'やめる')) return false;
+  }
+  await writeFile(sess.dir, fname, JSON.stringify(serialize()));
+  sess.lastSave = safeName(name);
+  updSessName(); toast('保存しました：' + sess.name + ' ／ ' + fname);
+  return true;
+}
+$('btnSaveSess').onclick = saveSessionManual;
+async function exportDirExe() { if (!await ensureSessionStored()) return null; return await sess.dir.getDirectoryHandle('ジングル', { create: true }); }
+async function ensureSessionStored() {
+  // make sure the session has its folder and every recording is on disk (never overwrites existing recordings)
+  if (!sess.dir) {
+    const dir = await ensureWorkDir(); if (!dir) return false;
+    sess.dir = await dir.getDirectoryHandle(safeName(sess.name || sessStamp()), { create: true });
+    sess.name = sess.dir.name;
+  }
+  await rec.writeChain;
+  const rd = await recDirOf(sess.dir);
+  if (!sess.recs.length && M.len) {   // loaded audio: keep a copy in the session folder
+    const f = await uniqueName(rd, 'rec_' + sessStamp() + '_読込.wav');
+    await writeFile(rd, f, await wavBlob([M.buf.slice(0, M.len)], 24));
+    sess.recs.push({ file: f, start: 0, len: M.len, done: true, idx: 1 });
+  } else {
+    for (const r of sess.recs) if (!rec.on || r !== rec.entry) if (!await fileExists(rd, r.file) && !await fileExists(sess.dir, r.file)) { await writeFile(rd, r.file, await wavBlob([M.buf.slice(r.start, r.start + r.len)], 24)); r.done = true; }
+  }
+  updSessName(); scheduleAutosave(); return true;
+}
+function hasContent() { return M.len > 0 || takes.some(t => t.segs.length); }
+async function askSaveBeforeNew(title) {
+  if (!hasContent()) return true;
+  const v = await dialog((el, done) => {
+    const m = document.createElement('div'); m.className = 'dmsg'; m.textContent = title + '　このセッションを保存しますか？'; el.appendChild(m);
+    el.appendChild(btnRow([mkBtn('保存して進む', 'primary', () => done('save')), mkBtn('保存せずに進む', '', () => done('nosave')), mkBtn('やめる', '', () => done(null))]));
+  });
+  if (!v) return false;
+  if (v === 'save') return await saveSessionManual();
+  return true;
+}
+async function newSessionFlow() {
+  if (rec.on) { toast('録音中はできません'); return; }
+  if (!await askSaveBeforeNew('新しいセッションにします。')) return;
+  Player.stop(); stopPlayers(); newSession(); srcInfo.load = ''; updSessName(); toast('新しいセッションにしました');
+}
+$('btnNewSess').onclick = newSessionFlow;
+async function openSession(presetDir, preferAuto) {
+  if (!hasFS) { toast('このブラウザではセッションを開けません（Chromeで開いてください）'); return; }
+  if (rec.on) { toast('録音中は開けません'); return; }
+  let dir = presetDir || null;
+  if (!dir && !isExe && !workDir) await ensureWorkDir();
+  if (!dir && workDir) {
+    const ds = []; for await (const [n, h] of workDir.entries()) if (h.kind === 'directory') ds.push(h);
+    if (!isExe && rootDir) for await (const [n, h] of rootDir.entries()) if (h.kind === 'directory' && n !== 'セッション' && n !== 'ジングルオケ') { let has = false; for await (const [m] of h.entries()) if (/\.json$/i.test(m)) { has = true; break; } if (has) ds.push(h); }   // sessions saved before v1.4 sit directly in the folder
+    if (!ds.length) { toast('まだセッションがありません'); return; }
+    ds.sort((a, b) => b.name.localeCompare(a.name));
+    const pickName = await chooseBox('どのセッションを開きますか？（新しい順）', ds.slice(0, 40).map(d => [d.name, '', d.name]));
+    if (!pickName) return; dir = ds.find(d => d.name === pickName);
+  }
+  if (!dir) { try { dir = await window.showDirectoryPicker({ id: 'workDir', mode: 'readwrite' }); } catch (e) { return; } }
+  try {
+    const list = [];
+    for await (const [n, h] of dir.entries()) if (h.kind === 'file' && /\.json$/i.test(n)) { const f = await h.getFile(); list.push({ n, t: f.lastModified }); }
+    if (!list.length) { toast('このフォルダにはセッションがありません（録音ごとのフォルダを選んでください）', 4500); return; }
+    list.sort((a, b) => b.t - a.t);
+    let pick = list[0].n;
+    if (preferAuto && list.some(x => x.n === AUTOSAVE)) pick = AUTOSAVE;
+    else if (list.length > 1) {
+      const fmtD = t => { const d = new Date(t), p = x => String(x).padStart(2, '0'); return `${d.getMonth() + 1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`; };
+      pick = await chooseBox('どのセッションを開きますか？', list.map(x => [x.n === AUTOSAVE ? '自動保存（最後の状態）' : x.n.replace(/\.json$/i, ''), fmtD(x.t), x.n]));
+      if (!pick) return;
+    }
+    const js = JSON.parse(await (await (await dir.getFileHandle(pick)).getFile()).text());
+    let recs = js.recs;
+    if (!recs) {   // older session format: a single recording
+      let f = js.recFile || null;
+      if (!f) { if (await fileExists(dir, 'recording.wav')) f = 'recording.wav'; else for await (const [n] of dir.entries()) if (/^rec_.*\.wav$/i.test(n)) { f = n; break; } }
+      recs = [{ file: f, start: 0, len: js.length || 0, done: true, idx: 0 }];
+    }
+    const parts = []; let total = js.length || 0, recovered = false;
+    for (const r of recs) {
+      let x = null;
+      const sdirs = await recSearchDirs(dir);
+      for (const sd of sdirs) { if (x) break; try { const f = await (await sd.getFileHandle(r.file)).getFile(); x = await decodeMono(await f.arrayBuffer()); } catch (e) {} }
+      if (!x) {
+        const re = r.idx ? new RegExp('^chunk_' + r.idx + '_\\d+\\.f32$') : /^chunk_\d+\.f32$/;
+        let cdir = sdirs[0]; const names = []; for (const sd of sdirs) { for await (const [n] of sd.entries()) if (re.test(n)) names.push(n); if (names.length) { cdir = sd; break; } }
+        names.sort(); const ps = []; let L = 0;
+        for (const n of names) { const a = new Float32Array(await (await (await cdir.getFileHandle(n)).getFile()).arrayBuffer()); ps.push(a); L += a.length; }
+        if (L) { x = new Float32Array(L); let o = 0; ps.forEach(q => { x.set(q, o); o += q.length; }); recovered = true; r.len = L; r.done = false; }
+      }
+      if (x) { parts.push([r.start, x]); total = Math.max(total, r.start + x.length); r.len = x.length; }
+    }
+    let audio = new Float32Array(total); parts.forEach(([st, x]) => audio.set(x.subarray(0, Math.max(0, total - st)), st));
+    if (recovered) toast('録音を途中のデータから復元しました', 4000);
+    if (!parts.length) audio = null;
+    if (!audio || !audio.length) throw new Error('no audio');
+    newSession();
+    M.setAll(audio);
+    marks = js.marks || []; markSeq = js.markSeq || (marks.length + 1); takeSeq = js.takeSeq || 1;
+    takes = (js.takes || []).map(t => Object.assign(newTake(t.segs, t.linked, t.name, t.id), { start: t.start, end: t.end, gain: t.gain || 0, edited: !!t.edited, kAdj: t.kAdj || 0, vAdj: t.vAdj || 0, made: t.made || null, fileName: t.fileName, leveled: !!t.leveled, autoLv: !!t.autoLv, flags: t.flags || [], slot: !!t.slot }));
+    takes.forEach(t => { if (t.made) t.made.url = null; fitView(t); });
+    if (js.settings) { Object.assign(S, js.settings); refreshSettingFields(); }
+    sess.dir = dir; sess.name = dir.name; sess.created = js.created || ''; sess.recs = recs;
+    sess.lastSave = pick === AUTOSAVE ? '' : pick.replace(/\.json$/i, '');
+    updSessName(); rebuildTakeDom(); topDirty = true; toast('開きました：' + dir.name + ' ／ ' + pick);
+    if (recovered || preferAuto) {   // after a crash: write the recovered recording as WAV, then tidy up
+      await ensureSessionStored();
+      if (isExe) {
+        try { await dir.removeEntry('_録音中.txt'); } catch (e) {}
+        try { const rd = await recDirOf(dir); const olds = []; for await (const [n] of rd.entries()) if (/^chunk_.*\.f32$/.test(n)) olds.push(n); for (const n of olds) await rd.removeEntry(n); } catch (e) {}
+      }
+    }
+  } catch (e) { toast('セッションを開けませんでした', 4500); }
+}
+$('btnOpenSess').onclick = () => openSession();
+
+/* WAV load */
+$('btnLoadWav').onclick = async () => { if (rec.on) { toast('録音中は読み込めません'); return; } if (!await askSaveBeforeNew('音声を読み込むと、新しいセッションになります。')) return; $('fileWav').click(); };
+$('fileWav').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try {
+    const ab = await f.arrayBuffer(); const sr = sourceRate(ab);
+    const x = await decodeMono(ab);
+    const keep = takes.filter(t => !t.segs.length && !t.live);   // prepared empty slots survive
+    newSession(); M.setAll(x); takes = keep; rebuildTakeDom();
+    srcInfo.load = sr && sr !== FS ? `読込 ${fmtRate(sr)} → 48kHzに変換` : (sr ? '読込 48kHz（変換なし）' : '');
+    if (sr && sr !== FS) setTimeout(() => toast(`${fmtRate(sr)} → 48kHz に変換して読み込みました`, 3500), 2700);
+    sess.name = sessStamp() + '_' + safeName(f.name.replace(/\.[^.]+$/, '')); updSessName();
+    if (isExe || workDir) { await ensureSessionStored(); saveSessionJson(); }   // the session folder (with a copy of the audio) is made right away, so auto-save starts now
+    topDirty = true; toast('読み込みました。SPLITで区切ってテイクに分けてください');
+  } catch (err) { toast('このファイルは読み込めませんでした'); }
+};
+function sourceRate(ab) {
+  // read the original sample rate from the file header (WAV / AIFF / FLAC / MP3 / M4A)
+  try {
+    const v = new DataView(ab), n = v.byteLength, str = (o, k) => { let r = ''; for (let i = 0; i < k && o + i < n; i++) r += String.fromCharCode(v.getUint8(o + i)); return r; };
+    if (str(0, 4) === 'RIFF' && str(8, 4) === 'WAVE') { let o = 12; while (o + 8 <= n) { const id = str(o, 4), sz = v.getUint32(o + 4, true); if (id === 'fmt ') return v.getUint32(o + 12, true); o += 8 + sz + (sz & 1); } }
+    if (str(0, 4) === 'fLaC') return (v.getUint8(18) << 12) | (v.getUint8(19) << 4) | (v.getUint8(20) >> 4);
+    if (str(0, 4) === 'FORM' && (str(8, 4) === 'AIFF' || str(8, 4) === 'AIFC')) {
+      let o = 12; while (o + 8 <= n) { const id = str(o, 4), sz = v.getUint32(o + 4); if (id === 'COMM') { const e = v.getUint16(o + 16) & 0x7fff, m = v.getUint32(o + 18); return Math.round(m * Math.pow(2, e - 16383 - 31)); } o += 8 + sz + (sz & 1); }
+    }
+    const u = new Uint8Array(ab);
+    for (let i = 0; i + 30 < n; i++) {   // M4A/MP4: audio track 'mdhd' timescale = sample rate
+      if (u[i] === 0x6d && u[i + 1] === 0x64 && u[i + 2] === 0x68 && u[i + 3] === 0x64) { const ver = u[i + 4]; const ts = v.getUint32(i + (ver === 1 ? 24 : 16)); if (ts >= 8000 && ts <= 384000) return ts; }
+      if (i > 4000000) break;
+    }
+    let o = 0; if (str(0, 3) === 'ID3') o = 10 + ((u[6] << 21) | (u[7] << 14) | (u[8] << 7) | u[9]);
+    for (let i = o; i + 4 < n && i < o + 200000; i++) {   // MP3 frame header
+      if (u[i] === 0xff && (u[i + 1] & 0xe0) === 0xe0) {
+        const ver = (u[i + 1] >> 3) & 3, sr = (u[i + 2] >> 2) & 3; if (ver === 1 || sr === 3) continue;
+        const base = [44100, 48000, 32000][sr]; return ver === 3 ? base : ver === 2 ? base / 2 : base / 4;
+      }
+    }
+  } catch (e) {}
+  return null;
+}
+const fmtRate = r => r ? (r % 1000 ? (r / 1000).toFixed(1) : r / 1000) + 'kHz' : '不明';
+let srcInfo = { load: '', input: '' };
+async function decodeMono(ab) {
+  const b = await ctx().decodeAudioData(ab.slice(0));
+  const n = b.length, x = new Float32Array(n);
+  for (let c = 0; c < b.numberOfChannels; c++) { const d = b.getChannelData(c); for (let i = 0; i < n; i++) x[i] += d[i] / b.numberOfChannels; }
+  return x;
+}
+
+/* ================= undo ================= */
+let undoStack = [], redoStack = [];
+function snap() { return JSON.stringify({ marks, takes: takes.map(t => ({ id: t.id, segs: t.segs, start: t.start, end: t.end, gain: t.gain, leveled: !!t.leveled, autoLv: !!t.autoLv, flags: (t.flags || []).slice(), linked: t.linked, edited: t.edited, name: t.name })) }); }
+function pushUndo() { undoStack.push(snap()); if (undoStack.length > 200) undoStack.shift(); redoStack = []; }
+function restore(s) {
+  const o = JSON.parse(s); marks = o.marks;
+  const old = new Map(takes.map(t => [t.id, t]));
+  takes = o.takes.map(d => { const t = old.get(d.id) || newTake(d.segs, d.linked, d.name, d.id); Object.assign(t, d); t.sel = null; t.cache = null; t.cursor = clamp(t.cursor, 0, tlen(t)); if (t.view.v1 <= t.view.v0 + 100) fitView(t); return t; });
+  if (Player.src) Player.stop();
+  rebuildTakeDom(); topDirty = true; scheduleAutosave();
+}
+function undo() { if (rec.on) { toast('録音中は元に戻せません'); return; } if (!undoStack.length) return; redoStack.push(snap()); restore(undoStack.pop()); }
+function redo() { if (rec.on) return; if (!redoStack.length) return; undoStack.push(snap()); restore(redoStack.pop()); }
+
+/* ================= marks & takes ================= */
+const topL = { cursor: 0, sel: null, stopPos: null, cursorMoved: true, fit: true, view: null, amp: 1 };
+function markPos(id) { if (id == null) return 0; const m = marks.find(m => m.id === id); return m ? m.pos : null; }
+function liveTake() { return takes.find(t => t.live) || null; }
+function startLiveTake(fromPos, prevMarkId) {
+  // fill the next empty (prepared) slot in order; add a new row only when none is left
+  let t = takes.find(x => !x.segs.length && !x.live);
+  const segs = [[fromPos, Math.max(fromPos + 1, M.len)]], linked = { a: prevMarkId, aPos: fromPos, b: null };
+  if (t) { t.segs = segs; t.linked = linked; t.edited = false; t.start = t.end = null; t.flags = []; t.cursor = 0; t.cache = null; t.slot = true; t.gain = 0; t.leveled = false; t.autoLv = true; }
+  else { t = newTake(segs, linked); takes.push(t); }
+  t.live = true; t.autoView = true; return t;
+}
+function updateLive() {
+  const t = liveTake(); if (!t) return;
+  t.segs[0][1] = Math.max(t.segs[0][0] + 1, M.len); t.cache = null;
+  if (t.autoView) { const L = tlen(t), pad = Math.round(0.5 * FS); t.view.v0 = -pad; t.view.v1 = Math.max(L, 25 * FS) + pad; }
+  t.dirty = true; if (t.dom) t.dom.m1.textContent = '録音中 ' + fmtS(tlen(t));
+}
+function finalizeLive(t, endPos, markId) {
+  t.segs = [[t.segs[0][0], endPos]]; t.live = false; t.autoView = false; t.linked.b = markId; t.cache = null;
+  if (t.start != null && t.start >= endPos - t.segs[0][0]) t.start = null;
+  fitView(t);
+}
+function addMark(pos) {
+  pos = Math.round(clamp(pos, 1, M.len)); if (!M.len) { toast('まだ録音がありません'); return; }
+  const lt = liveTake();
+  if (rec.on && lt && pos > lt.segs[0][0] + FS * 0.2) {   // SPLIT while recording
+    const m = { id: markSeq++, pos }; marks.push(m);
+    finalizeLive(lt, pos, m.id); fitAmp(lt); autoEnd(lt); autoLevel(lt);
+    startLiveTake(pos, m.id);
+    rebuildTakeDom(); topDirty = true; scheduleAutosave(); return;
+  }
+  if (rec.on && lt) { toast('ここでは区切れません'); return; }
+  pushUndo();
+  const prev = marks.filter(m => m.pos < pos).sort((a, b) => b.pos - a.pos)[0];
+  const m = { id: markSeq++, pos }; marks.push(m);
+  const a = prev ? prev.pos : 0;
+  const segs = [[a, pos]], linked = { a: prev ? prev.id : null, b: m.id };
+  // fill the next empty (prepared) slot in order, like SPLIT while recording; add a row only when none is left
+  let t = takes.find(x => !x.segs.length && !x.live);
+  if (t) { t.segs = segs; t.linked = linked; t.edited = false; t.start = t.end = null; t.flags = []; t.cursor = 0; t.cache = null; t.slot = true; t.gain = 0; t.leveled = false; t.autoLv = true; t.kAdj = t.vAdj = 0; }
+  else { t = newTake(segs, linked); takes.push(t); }
+  fitView(t); fitAmp(t); autoEnd(t); autoLevel(t);
+  rebuildTakeDom(); topDirty = true; scheduleAutosave();
+}
+function moveMark(m, pos) {
+  m.pos = Math.round(clamp(pos, 1, M.len));
+  takes.forEach(t => {
+    if (!t.edited && t.linked) {
+      if (t.live) return;
+      const a = t.linked.a != null ? markPos(t.linked.a) : (t.linked.aPos != null ? t.linked.aPos : 0), b = markPos(t.linked.b);
+      if (a != null && b != null && b > a) { t.segs = [[a, b]]; t.start = t.start == null ? null : clamp(t.start, 0, b - a); t.end = t.end == null ? null : clamp(t.end, 0, b - a); fitView(t); t.dirty = true; }
+    }
+  });
+  topDirty = true;
+}
+function deleteMark(m) {
+  pushUndo();
+  marks = marks.filter(x => x !== m);
+  takes = takes.filter(t => !(t.linked && !t.edited && (t.linked.b === m.id)));
+  rebuildTakeDom(); topDirty = true; scheduleAutosave();
+}
+function newTake(segs, linked, name, id) {
+  if (!id) { while (takes.some(x => x.id === takeSeq)) takeSeq++; id = takeSeq++; }   // prepared slots survive a new session, so never reuse their ids
+  const t = { id, name: name || '', segs: segs.map(s => [s[0], s[1]]), start: null, end: null, gain: 0, linked: linked || null, edited: false,
+    autoLv: true, view: { v0: 0, v1: 1 }, amp: 1, cursor: 0, cursorMoved: true, stopPos: null, sel: null, kAdj: 0, vAdj: 0, made: null, dom: null, dirty: true, cache: null };
+  if (!t.name) t.name = (takes.length + 1) + '本目';
+  return t;
+}
+function tlen(t) { let L = 0; for (const s of t.segs) L += s[1] - s[0]; return L; }
+function fitView(t) { const L = Math.max(tlen(t), 1); const pad = Math.round(L * 0.06); t.view.v0 = -pad; t.view.v1 = L + pad; t.dirty = true; }
+function mapLocal(t, x) { // take-local sample -> master sample (for drawing, incl. context)
+  const segs = t.segs; if (!segs.length) return -1;
+  if (x < 0) return segs[0][0] + x;
+  let acc = 0;
+  for (const s of segs) { const l = s[1] - s[0]; if (x < acc + l) return s[0] + (x - acc); acc += l; }
+  return segs[segs.length - 1][1] + (x - acc);
+}
+function sliceSegs(segs, a, b) {
+  a = Math.round(a); b = Math.round(b);   // positions are whole samples
+  const out = []; let acc = 0;
+  for (const s of segs) {
+    const l = s[1] - s[0], s0 = acc, s1 = acc + l;
+    const lo = Math.max(a, s0), hi = Math.min(b, s1);
+    if (hi > lo) out.push([s[0] + (lo - s0), s[0] + (hi - s0)]);
+    acc = s1;
+  }
+  return out;
+}
+function markEdited(t) { t.edited = true; t.linked = null; t.dirty = true; t.cache = null; }
+function adjDelete(t, a, b) {
+  const d = b - a; const f = v => v == null ? v : (v >= b ? v - d : (v > a ? a : v));
+  t.start = f(t.start); t.end = f(t.end); t.cursor = f(t.cursor); if (t.stopPos != null) t.stopPos = f(t.stopPos);
+  if (t.flags) t.flags = t.flags.filter(v => v < a || v >= b).map(f);
+  t.view.v0 = f(t.view.v0) ?? t.view.v0; t.view.v1 = Math.max(t.view.v0 + 100, t.view.v1 - (t.view.v1 > b ? d : 0));
+}
+function adjInsert(t, p, d) { const f = v => v == null ? v : (v >= p ? v + d : v); t.start = f(t.start); t.end = f(t.end); if (t.flags) t.flags = t.flags.map(f); if (t.cursor > p) t.cursor += d; t.view.v1 += d; }
+function opDelete(t, a, b) {
+  const L = tlen(t); a = clamp(Math.round(a), 0, L); b = clamp(Math.round(b), 0, L); if (b - a < 1) return;
+  if (b - a >= L) { toast('全部は消せません'); return; }
+  pushUndo(); t.segs = sliceSegs(t.segs, 0, a).concat(sliceSegs(t.segs, b, L)); adjDelete(t, a, b); t.sel = null; markEdited(t); afterEdit(t);
+}
+function opInsert(t, p, clip, replaceSel) {
+  const L = tlen(t); let a = clamp(Math.round(p), 0, L), b = a;
+  if (replaceSel && t.sel) { a = clamp(Math.round(Math.min(t.sel[0], t.sel[1])), 0, L); b = clamp(Math.round(Math.max(t.sel[0], t.sel[1])), 0, L); }
+  pushUndo();
+  if (b > a) { t.segs = sliceSegs(t.segs, 0, a).concat(sliceSegs(t.segs, b, L)); adjDelete(t, a, b); }
+  const wasEmpty = !t.segs.length;
+  const L2 = tlen(t); const cl = clip.reduce((s, c) => s + c[1] - c[0], 0);
+  t.segs = sliceSegs(t.segs, 0, a).concat(clip.map(c => [c[0], c[1]])).concat(sliceSegs(t.segs, a, L2));
+  adjInsert(t, a, cl); t.sel = [a, a + cl]; markEdited(t); if (wasEmpty) fitView(t); afterEdit(t);
+}
+function opJoin(t, a, b) {
+  // merge split lines (contiguous boundaries) inside [a,b]
+  const out = []; let acc = 0, changed = false;
+  for (const sg of t.segs) {
+    const prev = out[out.length - 1];
+    if (prev && prev[1] === sg[0] && acc > a && acc < b) { prev[1] = sg[1]; changed = true; }
+    else out.push([sg[0], sg[1]]);
+    acc += sg[1] - sg[0];
+  }
+  if (!changed) { toast('選択範囲に結合できる分割線がありません（編集でつないだ所は結合できません）', 3500); return; }
+  pushUndo(); t.segs = out; t.dirty = true; t.cache = null; afterEdit(t);
+}
+function boundariesIn(t, a, b) {
+  let acc = 0, n = 0, joinable = 0;
+  for (let i = 0; i < t.segs.length - 1; i++) { acc += t.segs[i][1] - t.segs[i][0]; if (acc > a && acc < b) { n++; if (t.segs[i][1] === t.segs[i + 1][0]) joinable++; } }
+  return { n, joinable };
+}
+function selRange(l) { if (!l.sel) return null; const a = Math.min(l.sel[0], l.sel[1]), b = Math.max(l.sel[0], l.sel[1]); return b - a > 10 ? [a, b] : null; }
+async function exportSelection(lane) {
+  // write the selected part as it is (no level change) to a stereo 16bit/48kHz WAV
+  const r = selRange(lane); if (!r) { toast('範囲を選んでください'); return; }
+  const segs = lane === topL ? [[Math.round(r[0]), Math.round(r[1])]] : sliceSegs(lane.segs, r[0], r[1]);
+  const x = renderSegs(segs, 0);
+  const n = Math.min(144, x.length >> 2); for (let i = 0; i < n; i++) { const g = i / n; x[i] *= g; x[x.length - 1 - i] *= g; }   // 3ms fade so the cut edges don't click
+  const d = new Date(), p2 = v => String(v).padStart(2, '0');
+  const def = safeName((lane === topL ? '録音' : (lane.fileName || lane.name)) + `_切り出し_${p2(d.getHours())}${p2(d.getMinutes())}${p2(d.getSeconds())}`);
+  const name = await promptBox(`選んだ ${(x.length / FS).toFixed(2)}秒 をWAVで書き出します。ファイル名`, def);
+  if (!name) return;
+  const fname = safeName(name.replace(/\.wav$/i, '')) + '.wav';
+  const blob = await wavBlob([x, x.slice()], 16);
+  if ((isExe || hasFS) && await ensureSessionStored()) {
+    const dir = await sess.dir.getDirectoryHandle('切り出し', { create: true });
+    if (await fileExists(dir, fname) && !await confirmBox(`「${fname}」はもうあります。上書きしますか？`, '上書きする', 'やめる')) return;
+    await writeFile(dir, fname, blob); toast(`書き出しました：${sess.name}\\切り出し\\${fname}`, 3500);
+  } else { download(fname, blob); toast('書き出しました（ダウンロード）：' + fname, 3500); }
+}
+function cutSel(l) { const r = selRange(l); if (!r || l === topL) return; copySel(l); opDelete(l, r[0], r[1]); }
+function opSplit(t, p) {
+  p = Math.round(p); let acc = 0;
+  for (let i = 0; i < t.segs.length; i++) {
+    const s = t.segs[i], l = s[1] - s[0];
+    if (p > acc && p < acc + l) { pushUndo(); t.segs.splice(i, 1, [s[0], s[0] + (p - acc)], [s[0] + (p - acc), s[1]]); markEdited(t); afterEdit(t); return true; }
+    acc += l;
+  }
+  return false;
+}
+function setStartEnd(t, which, p) {
+  if (t.live && which === 'end') { toast('エンドはSPLITで確定してから打てます'); return; }
+  if (!t.live) pushUndo(); p = clamp(Math.round(p), 0, tlen(t));
+  if (which === 'start') { t.start = p; if (t.end != null && t.end <= p) t.end = null; }
+  else { t.end = p; if (t.start != null && t.start >= p) t.start = null; }
+  resetIfLenChanged(t); autoLevel(t);
+  t.dirty = true; t.cache = null; updTakeDom(t); scheduleAutosave();
+}
+function clearStartEnd(t, which) {
+  pushUndo(); t[which] = null; resetIfLenChanged(t);
+  t.dirty = true; t.cache = null; updTakeDom(t); scheduleAutosave();
+}
+/* level adjustment is on from the start: whenever Start/End (or the audio between) changes,
+   the whole-take gain is set so Start→End reads the target loudness. Only a plain gain, never dynamics.
+   Turned off by 解除 or by touching ナレ音量 −/+ ; レベル調整 turns it back on. */
+function autoLevel(t) {
+  // until Start/End are both set, measure the whole take (BS.1770 gating leaves out the quiet parts), so editing is heard at the final level
+  if (!t.autoLv || t.live || !t.segs.length) return;
+  const a = t.start != null ? t.start : 0, b = t.end != null ? t.end : tlen(t);
+  if (b - a < FS * 0.5) return;
+  const x = renderSegs(sliceSegs(t.segs, a, b), 0);
+  const lk = lkfs(x, x); if (!Number.isFinite(lk)) return;
+  const g = Math.round((S.narTarget - lk) * 10) / 10;
+  if (g !== t.gain || !t.leveled) { t.gain = g; t.leveled = true; t.cache = null; }
+}
+/* auto END after SPLIT: the end of the last stretch of talk before the split.
+   talk = voiced frames; pauses inside a narration are < 1.5 s; a narration lasts >= 5 s.
+   Short sounds after it (paper, water, "はい") are ignored. The breathy tail right after the
+   last voiced frame (devoiced 「す」) is kept, then S.endPad seconds of room. */
+/* shared talk analysis: voiced syllables (pitch 70–400 Hz, ≥50 ms) judged against this take's own talk level,
+   grouped into stretches whose pauses are < 1.5 s. A narration is a stretch of 5 s or more. */
+function talkAnalyze(buf, a, b, gapSec) {
+  const D = 8, R = FS / D, hop = Math.round(0.01 * R), win = Math.round(0.03 * R);
+  a = Math.max(a, b - FS * 180); if (b - a < FS) return null;
+  const n = Math.floor((b - a) / D), y = new Float32Array(n);
+  for (let i = 0; i < n; i++) { let s = 0; const o = a + i * D; for (let k = 0; k < D; k++) s += buf[o + k]; y[i] = s / D; }
+  const l0 = Math.round(R / 400), l1 = Math.round(R / 70);
+  const nf = Math.floor((n - win - l1) / hop); if (nf < 50) return null;
+  const en = new Float32Array(nf), vo = new Uint8Array(nf);
+  for (let f = 0; f < nf; f++) { let s = 0; const o = f * hop; for (let i = 0; i < win; i++) s += y[o + i] * y[o + i]; en[f] = 10 * Math.log10(s / win + 1e-12); }
+  // levels are judged against this take's own talk, so a low or high recording level doesn't matter
+  const sorted = Array.from(en).sort((p, q) => p - q), floor = sorted[Math.floor(nf * 0.1)], talk = sorted[Math.floor(nf * 0.95)];
+  const thr = Math.max(floor + 10, talk - 20);   // syllables sit within ~20 dB of the talk level; pens, paper, breaths and hum are lower
+  for (let f = 0; f < nf; f++) {
+    if (en[f] < thr) continue;
+    const o = f * hop; let e0 = 0; for (let i = 0; i < win; i++) e0 += y[o + i] * y[o + i];
+    let best = 0;
+    for (let L = l0; L <= l1; L++) {
+      let c = 0, e1 = 0; for (let i = 0; i < win; i++) { const v = y[o + i + L]; c += y[o + i] * v; e1 += v * v; }
+      const r = c / Math.sqrt(e0 * e1 + 1e-12); if (r > best) best = r;
+    }
+    vo[f] = best > 0.55 ? 1 : 0;
+  }
+  // a syllable is at least 50 ms of voice; shorter periodic blips (clicks, hum, a cup) don't count
+  for (let f = 0; f < nf;) { if (!vo[f]) { f++; continue; } let g = f; while (g < nf && vo[g]) g++; if (g - f < 5) vo.fill(0, f, g); f = g; }
+  const gapF = Math.round((gapSec || 1.5) / 0.01), runs = [];
+  let s0 = -1, last = -1;
+  for (let f = 0; f < nf; f++) if (vo[f]) { if (s0 < 0 || f - last > gapF) { if (s0 >= 0) runs.push([s0, last]); s0 = f; } last = f; }
+  if (s0 >= 0) runs.push([s0, last]);
+  if (!runs.length) return null;
+  const longF = Math.round(5 / 0.01);
+  let pick = null; for (let i = runs.length - 1; i >= 0; i--) if (runs[i][1] - runs[i][0] >= longF) { pick = runs[i]; break; }
+  if (!pick) pick = runs.reduce((p, q) => (q[1] - q[0] > p[1] - p[0] ? q : p));
+  return { a, D, hop, win, nf, en, vo, floor, talk, pick };
+}
+/* energy above 4 kHz in 10 ms frames over buf[a..b) (whispered 「す」「さ」「は」 live there) */
+function hissFrames(buf, a, b) {
+  const w = 2 * Math.PI * 4000 / FS, cs = Math.cos(w), al = Math.sin(w) / (2 * Math.SQRT1_2);
+  const b0 = (1 + cs) / 2 / (1 + al), b1 = -(1 + cs) / (1 + al), a1 = -2 * cs / (1 + al), a2 = (1 - al) / (1 + al);
+  const F = Math.round(0.01 * FS), nh = Math.floor((b - a) / F), he = new Float32Array(nh);
+  let x1 = 0, x2 = 0, y1 = 0, y2 = 0, u1 = 0, u2 = 0, v1 = 0, v2 = 0, k = 0, s2 = 0, c = 0;
+  for (let i = 0; i < nh * F; i++) {
+    const x0 = buf[a + i]; const y0 = b0 * x0 + b1 * x1 + b0 * x2 - a1 * y1 - a2 * y2; x2 = x1; x1 = x0; y2 = y1; y1 = y0;
+    const v0 = b0 * y0 + b1 * u1 + b0 * u2 - a1 * v1 - a2 * v2; u2 = u1; u1 = y0; v2 = v1; v1 = v0;
+    s2 += v0 * v0; if (++c === F) { he[k++] = 10 * Math.log10(s2 / F + 1e-14); s2 = 0; c = 0; }
+  }
+  const hs = Array.from(he).sort((p, q) => p - q), hFloor = hs[Math.floor(nh * 0.1)], hTalk = hs[Math.floor(nh * 0.95)];
+  return { F, nh, he, thr: Math.max(hFloor + 12, hTalk - 40) };
+}
+function findTalkEnd(a, b) {
+  const A = talkAnalyze(M.buf, a, b); if (!A) return null;
+  ({ a } = A); const { D, hop, win, nf, en, vo, floor, talk } = A; let pick = A.pick;
+  // drop a tiny island hanging off the end (a click 0.4 s+ after the last word, shorter than 0.15 s)
+  for (;;) {
+    let e = pick[1], k = e; while (k > pick[0] && vo[k - 1]) k--;
+    let p = k - 1; while (p > pick[0] && !vo[p]) p--;
+    if (p > pick[0] && k - p >= 40 && e - k < 15) pick = [pick[0], p]; else break;
+  }
+  // keep the breathy tail that follows without a break (up to 0.4 s)
+  let e = pick[1]; const tailMax = e + Math.round(0.4 / 0.01);
+  while (e + 1 < nf && e + 1 <= tailMax && en[e + 1] > Math.max(floor + 6, talk - 24)) e++;   // only an audible breathy tail, not the room
+  let endS = a + (e * hop + win) * D;
+  // a whispered 「す」 at the very end is a hiss above 4 kHz, which the analysis above can't hear: follow it
+  {
+    const H = hissFrames(M.buf, a, b);
+    let k = Math.floor((endS - a) / H.F); const kMax = k + 40;
+    while (k < H.nh && k < kMax && H.he[k] > H.thr) k++;
+    endS = Math.max(endS, a + k * H.F);
+  }
+  return Math.min(b, endS + Math.round((S.endPad || 0) * FS));
+}
+/* 編集なし: going back from END, where the narration starts. buf is the take's own audio (0..b = up to END).
+   The last stretch of talk is the narration. A short first sound is kept (it can be the first syllable of a
+   fading-in start); a breathy or whispered first sound (さ行・は行) is kept; then S.startPad seconds of room. */
+function findTalkStart(buf, b) {
+  // pauses inside a narration can be longer than the 1.5 s used for END; a flub before it is usually 2 s+ away
+  const A = talkAnalyze(buf, 0, b, S.startGap > 0 ? S.startGap : 2.0); if (!A) return null;
+  const { a, D, hop, win, nf, en, vo, floor, talk } = A; let pick = A.pick;
+  let st = pick[0]; const backMax = st - Math.round(0.3 / 0.01);
+  while (st - 1 >= 0 && st - 1 >= backMax && en[st - 1] > Math.max(floor + 6, talk - 24)) st--;   // an audible breathy onset, not the room
+  let startS = a + st * hop * D;
+  {
+    const H = hissFrames(buf, a, b);
+    let k = Math.floor((startS - a) / H.F) - 1; const kMin = k - 30;
+    while (k >= 0 && k >= kMin && H.he[k] > H.thr) k--;
+    startS = Math.min(startS, a + (k + 1) * H.F);
+  }
+  // pin the very moment the voice comes in: 1 ms steps, the first one 10 dB above the room (the analysis above works in 30 ms frames)
+  {
+    const B = Math.round(0.001 * FS), lvl = i => { let q = 0; const e = Math.min(buf.length, i + B); for (let k = i; k < e; k++) q += buf[k] * buf[k]; return 10 * Math.log10(q / Math.max(1, e - i) + 1e-14); };
+    const r0 = Math.max(0, startS - Math.round(0.6 * FS)), r1 = Math.max(r0, startS - Math.round(0.1 * FS)), rl = [];
+    for (let i = r0; i + B <= r1; i += B) rl.push(lvl(i));
+    if (rl.length >= 20) {
+      rl.sort((p, q) => p - q); const room = rl[Math.floor(rl.length / 2)];
+      for (let i = Math.max(0, startS - Math.round(0.05 * FS)); i < Math.min(buf.length, startS + Math.round(0.15 * FS)); i += B) if (lvl(i) > room + 10) { startS = i; break; }
+    }
+  }
+  return Math.max(0, startS - Math.round((S.startPad != null ? S.startPad : 0.03) * FS));
+}
+function noEditStart(t) {
+  if (t.live || !t.segs.length) return;
+  if (t.end == null) { toast('先にエンドを打ってください'); return; }
+  const x = renderSegs(sliceSegs(t.segs, 0, t.end), 0);
+  let p; try { p = findTalkStart(x, x.length); } catch (e) { p = null; }
+  if (p == null || p >= t.end) { toast('言い始めが見つかりませんでした。スタートは手で打ってください', 3500); return; }
+  setStartEnd(t, 'start', p);
+}
+/* vertical size: the loudest part of the take just reaches the top and bottom of the frame */
+function fitAmp(t) {
+  let pk = 0; for (const sg of t.segs) pk = Math.max(pk, M.peak(sg[0], sg[1]));
+  t.amp = pk > 1e-5 ? clamp(1 / (1.6 * pk), 0.25, 64) : 1; t.dirty = true;
+}
+function autoEnd(t) {
+  if (!t.segs.length) return;
+  const a = t.segs[0][0], b = t.segs[t.segs.length - 1][1];
+  let p; try { p = findTalkEnd(a, b); } catch (e) { p = null; }
+  if (p == null) return;
+  const loc = p - a; if (loc <= 0) return;
+  if (t.start != null && loc <= t.start) return;
+  t.end = clamp(loc, 0, tlen(t)); resetIfLenChanged(t); autoLevel(t); t.dirty = true; t.cache = null;
+}
+function resetIfLenChanged(t) {
+  // manual 入り/オケ adjustments belong to one narration length; when that length changes, start again from the automatic choice
+  const len = t.start != null && t.end != null ? t.end - t.start : null;
+  if (t._narrLen !== undefined && len !== t._narrLen && (t.kAdj || t.vAdj)) { t.kAdj = 0; t.vAdj = 0; }
+  t._narrLen = len;
+}
+function afterEdit(t) { resetIfLenChanged(t); autoLevel(t); t.cache = null; t.dirty = true; updTakeDom(t); scheduleAutosave(); if (Player.lane === t) Player.stop(); }
+
+/* ===== 差し替え候補: find where a picked-up line most likely belongs =====
+   Log-mel features (16 kHz, 25 ms window, 10 ms hop, 40 bands) of the selection are compared with the whole
+   recording by subsequence DTW (steps (1,1),(2,1),(1,2): the speed may differ a bit). Takes with START and END
+   are only searched between them; the selection itself is skipped. Runs only when asked (right-click). */
+let cands = null;
+const CF = { hop: 480, win: 400, nfft: 512, nb: 40, cache: null };
+function clearCands() { cands = null; const b = document.getElementById('btnCandClr'); if (b) b.hidden = true; if (typeof redrawAll === 'function') redrawAll(); }
+function drawCands(g, h, toPx) {
+  if (!cands) return;
+  cands.forEach(([a, b]) => toPx(a, b).forEach(([x0, x1]) => {
+    if (x1 < 0 || x0 > g.canvas.width * 4) return;
+    g.fillStyle = 'rgba(167,121,255,.30)'; g.fillRect(x0, 0, Math.max(2, x1 - x0), h);
+    g.fillStyle = '#B48CFF'; g.fillRect(x0, 0, Math.max(2, x1 - x0), 3);
+  }));
+}
+function melBank() {
+  const { nfft, nb } = CF, fs = 16000, mel = f => 2595 * Math.log10(1 + f / 700), imel = m => 700 * (10 ** (m / 2595) - 1);
+  const pts = []; for (let k = 0; k < nb + 2; k++) pts.push(Math.floor((nfft + 1) * imel(mel(80) + (mel(7600) - mel(80)) * k / (nb + 1)) / fs));
+  return pts;
+}
+function fft(re, im) {   // in place, radix 2
+  const n = re.length;
+  for (let i = 1, j = 0; i < n; i++) { let bit = n >> 1; for (; j & bit; bit >>= 1) j ^= bit; j ^= bit; if (i < j) { let t = re[i]; re[i] = re[j]; re[j] = t; t = im[i]; im[i] = im[j]; im[j] = t; } }
+  for (let len = 2; len <= n; len <<= 1) {
+    const ang = -2 * Math.PI / len, wr = Math.cos(ang), wi = Math.sin(ang);
+    for (let i = 0; i < n; i += len) { let cr = 1, ci = 0; for (let k = 0; k < len / 2; k++) {
+      const a = i + k, b = a + len / 2, xr = re[b] * cr - im[b] * ci, xi = re[b] * ci + im[b] * cr;
+      re[b] = re[a] - xr; im[b] = im[a] - xi; re[a] += xr; im[a] += xi; const t = cr * wr - ci * wi; ci = cr * wi + ci * wr; cr = t; } }
+  }
+}
+function candFeatures() {   // log-mel for the whole recording, cached while the recording does not change
+  const n = Math.floor((M.len - 1200) / CF.hop) + 1;
+  if (CF.cache && CF.cache.len === M.len && CF.cache.buf === M.buf) return CF.cache;
+  // 48 kHz -> 16 kHz: 63-tap windowed-sinc low-pass at 7.2 kHz, every 3rd sample
+  const T = 63, hT = 31, lp = new Float32Array(T); let sum = 0;
+  for (let k = 0; k < T; k++) { const m = k - hT, fc = 7200 / FS; lp[k] = (m ? Math.sin(2 * Math.PI * fc * m) / (Math.PI * m) : 2 * fc) * (0.42 - 0.5 * Math.cos(2 * Math.PI * k / (T - 1)) + 0.08 * Math.cos(4 * Math.PI * k / (T - 1))); sum += lp[k]; }
+  for (let k = 0; k < T; k++) lp[k] /= sum;
+  const n16 = Math.floor(M.len / 3), y = new Float32Array(n16), B = M.buf;
+  for (let o = 0; o < n16; o++) { const c = o * 3; let a = 0; for (let k = 0; k < T; k++) { const i = c + k - hT; if (i >= 0 && i < M.len) a += B[i] * lp[k]; } y[o] = a; }
+  const { win, nfft, nb } = CF, pts = melBank(), F = new Float32Array(Math.max(0, n) * nb), re = new Float32Array(nfft), im = new Float32Array(nfft), hw = new Float32Array(win);
+  for (let i = 0; i < win; i++) hw[i] = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / (win - 1));
+  const P = new Float32Array(nfft / 2 + 1);
+  for (let f = 0; f < n; f++) {
+    re.fill(0); im.fill(0); const o = f * 160; for (let i = 0; i < win && o + i < n16; i++) re[i] = y[o + i] * hw[i];
+    fft(re, im); for (let k = 0; k <= nfft / 2; k++) P[k] = re[k] * re[k] + im[k] * im[k];
+    for (let b = 0; b < nb; b++) { const a = pts[b], m = pts[b + 1], c = pts[b + 2]; let e = 0;
+      for (let k = a; k < m; k++) e += P[k] * (k - a) / Math.max(1, m - a);
+      for (let k = m; k < c; k++) e += P[k] * (c - k) / Math.max(1, c - m);
+      F[f * nb + b] = Math.log(e + 1e-9); }
+  }
+  CF.cache = { len: M.len, buf: M.buf, n: Math.max(0, n), F };
+  return CF.cache;
+}
+function candNorm(F, nb, idx) {   // mean removal over the given frames, then unit length per frame
+  const mean = new Float64Array(nb); idx.forEach(f => { for (let b = 0; b < nb; b++) mean[b] += F[f * nb + b]; });
+  for (let b = 0; b < nb; b++) mean[b] /= Math.max(1, idx.length);
+  return f => { const v = new Float32Array(nb); let s = 0; for (let b = 0; b < nb; b++) { v[b] = F[f * nb + b] - mean[b]; s += v[b] * v[b]; } s = Math.sqrt(s) + 1e-9; for (let b = 0; b < nb; b++) v[b] /= s; return v; };
+}
+function findCands(r, lane) {
+  if (rec.on) return toast('録音中はできません');
+  const inTake = lane && lane !== topL;
+  if (!r) return toast(inTake ? '波形をドラッグして、差し替える一言の範囲を選んでください' : '上の録音の波形で、もらった一言の範囲を選んでください');
+  if ((r[1] - r[0]) / FS < 0.3) return toast('範囲が短すぎます（0.3秒以上）');
+  if ((r[1] - r[0]) / FS > 15) return toast('範囲が長すぎます（15秒まで）');
+  toast('差し替え候補を探しています…', 4000);
+  setTimeout(() => {
+    const C = candFeatures(), nb = CF.nb, N = C.n, hop = CF.hop, fr = smp => Math.max(0, Math.min(N - 1, Math.round(smp / hop)));
+    // query: the selected sound as frames of the recording (in a take: follow its pieces in order)
+    let qf = [];
+    if (inTake) { for (let l = r[0]; l + 1200 <= r[1]; l += hop) qf.push(fr(mapLocal(lane, Math.floor(l)))); }
+    else { const q0 = fr(r[0]), q1 = Math.min(N, Math.round((r[1] - 1200) / hop) + 1); for (let f = q0; f < q1; f++) qf.push(f); }
+    const Mq = qf.length; if (Mq < 10) return toast('範囲が短すぎます');
+    const self = new Set(qf);
+    // where to look, as a sequence of recording frames
+    let seq = [];
+    if (inTake) {   // that take only, all of it (also before START / after END)
+      for (const sg of lane.segs) for (let f = Math.ceil(sg[0] / hop); f * hop + 1200 <= sg[1] && f < N; f++) if (!self.has(f)) seq.push(f);
+    } else {        // the whole recording; finished takes only between START and END
+      const ok = new Uint8Array(N).fill(1);
+      takes.forEach(t => {
+        if (t.live || t.start == null || t.end == null || !t.segs.length) return;
+        for (const sg of t.segs) for (let f = Math.max(0, Math.floor(sg[0] / hop)); f < Math.min(N, Math.ceil(sg[1] / hop)); f++) ok[f] = 0;
+        let acc = 0; for (const sg of t.segs) { const L = sg[1] - sg[0], lo = Math.max(t.start, acc), hi = Math.min(t.end, acc + L);
+          if (hi > lo) for (let f = Math.max(0, Math.floor((sg[0] + lo - acc) / hop)); f < Math.min(N, Math.ceil((sg[0] + hi - acc) / hop)); f++) ok[f] = 1; acc += L; }
+      });
+      for (let f = 0; f < N; f++) if (ok[f] && !self.has(f)) seq.push(f);
+    }
+    if (seq.length < Mq / 2) { clearCands(); return toast('探す場所がありません'); }
+    const qn = candNorm(C.F, nb, qf), rn = candNorm(C.F, nb, seq);
+    const Q = new Float32Array(Mq * nb); for (let i = 0; i < Mq; i++) Q.set(qn(qf[i]), i * nb);
+    const NS = seq.length, INF = 1e9;
+    let D1 = new Float64Array(Mq).fill(INF), D2 = new Float64Array(Mq).fill(INF), S1 = new Int32Array(Mq), S2 = new Int32Array(Mq);
+    const cost = new Float32Array(NS).fill(INF), start = new Int32Array(NS);
+    for (let j = 0; j < NS; j++) {
+      // a jump in the sequence (a skipped part) must not be bridged
+      if (j > 0 && seq[j] - seq[j - 1] > 3) { D1 = new Float64Array(Mq).fill(INF); D2 = new Float64Array(Mq).fill(INF); }
+      const d = new Float32Array(Mq), v = rn(seq[j]);
+      for (let i = 0; i < Mq; i++) { let sm = 0; const o = i * nb; for (let b = 0; b < nb; b++) sm += Q[o + b] * v[b]; d[i] = 1 - sm; }
+      const D = new Float64Array(Mq), St = new Int32Array(Mq);
+      D[0] = d[0]; St[0] = j;
+      for (let i = 1; i < Mq; i++) {
+        let best = D1[i - 1] + d[i], st = S1[i - 1];
+        if (i >= 2) { const c = D1[i - 2] + d[i - 1] + d[i]; if (c < best) { best = c; st = S1[i - 2]; } }   // query +2, recording +1
+        { const c = D2[i - 1] + d[i]; if (c < best) { best = c; st = S2[i - 1]; } }                          // query +1, recording +2
+        D[i] = best; St[i] = st;
+      }
+      cost[j] = D[Mq - 1] / Mq; start[j] = St[Mq - 1];
+      D2 = D1; S2 = S1; D1 = D; S1 = St;
+    }
+    const fin = []; for (let j = 0; j < NS; j++) if (cost[j] < 1.5) fin.push(cost[j]);
+    if (!fin.length) { clearCands(); return toast('似ている場所は見つかりませんでした'); }
+    fin.sort((x, y) => x - y); const med = fin[fin.length >> 1];
+    const order = Array.from(cost.keys()).filter(j => cost[j] < 1.5).sort((x, y) => cost[x] - cost[y]);
+    const picks = [];
+    for (const j of order) {
+      if (cost[j] > med * 0.75 || picks.length >= 4) break;
+      const a = start[j], b = j; if (b - a < Mq * 0.4) continue;
+      if (picks.some(p => Math.min(b, p[1]) - Math.max(a, p[0]) > -Mq * 0.3)) continue;
+      picks.push([a, b, cost[j]]);
+    }
+    if (!picks.length) { clearCands(); return toast('似ている場所は見つかりませんでした'); }
+    // back to positions in the recording (one candidate may cover several pieces of a take)
+    cands = [];
+    picks.forEach(([a, b]) => { let r0 = seq[a]; for (let k = a + 1; k <= b + 1; k++) { if (k > b || seq[k] !== seq[k - 1] + 1) { cands.push([r0 * hop, Math.min(M.len, seq[k - 1] * hop + 1200)]); if (k <= b) r0 = seq[k]; } } });
+    window._candDebug = picks.map(([a, b, c]) => ({ at: +(seq[a] * hop / FS).toFixed(2), to: +((seq[b] * hop + 1200) / FS).toFixed(2), cost: +c.toFixed(3) })).concat([{ median: +med.toFixed(3) }]);
+    $('btnCandClr').hidden = false; redrawAll();
+    toast(`似ている場所が ${picks.length} か所あります（紫の枠）`);
+  }, 30);
+}
+
+/* clipboard */
+let clip = null;
+function copySel(lane) {
+  if (lane === topL) {
+    if (!topL.sel) return toast('上の録音の波形をドラッグして範囲を選んでください');
+    const a = Math.round(Math.min(topL.sel[0], topL.sel[1])), b = Math.round(Math.max(topL.sel[0], topL.sel[1]));
+    clip = [[a, b]];
+  } else {
+    if (!lane.sel) return toast('波形をドラッグして範囲を選んでください');
+    const a = Math.min(lane.sel[0], lane.sel[1]), b = Math.max(lane.sel[0], lane.sel[1]);
+    clip = sliceSegs(lane.segs, a, b);
+  }
+  toast('コピーしました（' + fmtS(clip.reduce((s, c) => s + c[1] - c[0], 0)) + '）');
+}
+function paste(lane) {
+  if (!clip) return toast('先にコピーしてください');
+  if (lane === topL) return toast('貼り付けはテイクの行で行います');
+  opInsert(lane, lane.cursor, clip, !!(lane.sel && Math.abs(lane.sel[1] - lane.sel[0]) > 10));
+}
+
+/* render take audio (with short crossfades at non-contiguous joins) */
+function renderSegs(segs, gainDb) {
+  const total = segs.reduce((s, c) => s + c[1] - c[0], 0);
+  const out = new Float32Array(total); const xf = Math.round(0.005 * FS); let pos = 0;
+  const g = dbToGain(gainDb || 0);
+  segs.forEach((s, k) => {
+    out.set(M.buf.subarray(s[0], s[1]), pos);
+    if (k > 0 && segs[k - 1][1] !== s[0]) {
+      const pe = segs[k - 1][1], n = Math.min(xf, s[1] - s[0]);
+      for (let i = 0; i < n; i++) { const tt = (i + 0.5) / n; const prev = pe + i < M.len ? M.buf[pe + i] : 0; out[pos + i] = M.buf[s[0] + i] * Math.sin(tt * Math.PI / 2) + prev * Math.cos(tt * Math.PI / 2); }
+    }
+    pos += s[1] - s[0];
+  });
+  if (g !== 1) for (let i = 0; i < out.length; i++) out[i] *= g;
+  return out;
+}
+function f32wav(x) {   // mono 32-bit float WAV (for the ×1.4 player)
+  const n = x.length, b = new ArrayBuffer(44 + n * 4), v = new DataView(b), w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  w(0, 'RIFF'); v.setUint32(4, 36 + n * 4, true); w(8, 'WAVE'); w(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 3, true); v.setUint16(22, 1, true);
+  v.setUint32(24, FS, true); v.setUint32(28, FS * 4, true); v.setUint16(32, 4, true); v.setUint16(34, 32, true); w(36, 'data'); v.setUint32(40, n * 4, true);
+  new Float32Array(b, 44).set(x); return new Blob([b], { type: 'audio/wav' });
+}
+function takeAudio(t) { if (!t.cache) t.cache = renderSegs(t.segs, t.gain); return t.cache; }
+
+/* ================= player (editing) ================= */
+let activeLane = topL;
+const Player = {
+  src: null, lane: null, start: 0, offset: 0, base: 0,
+  play(lane, fromCursor) {
+    this.stop(true);
+    const c = ctx(); c.resume();
+    let startPos;
+    if (fromCursor || lane.cursorMoved || lane.stopPos == null) startPos = lane.cursor; else startPos = lane.stopPos;
+    lane.cursorMoved = false;
+    let data, base = 0;
+    if (lane === topL) {
+      const end = Math.min(M.len, startPos + FS * 600); data = M.buf.subarray(startPos, end); base = startPos;
+    } else { data = takeAudio(lane); }
+    if (lane === topL) { if (data.length < 64) { lane.stopPos = null; return; } }
+    else if (startPos >= data.length - 64) { startPos = lane.cursor; if (startPos >= data.length - 64) return; }
+    if (lane !== topL && lane.fast) { this.playFast(lane, data, startPos); return; }
+    const b = c.createBuffer(1, data.length, FS); b.copyToChannel(data, 0);
+    const s = c.createBufferSource(); s.buffer = b; s.connect(outBus);
+    const off = lane === topL ? 0 : startPos / FS;
+    s.start(0, off);
+    this.src = s; this.lane = lane; this.start = c.currentTime; this.offset = lane === topL ? startPos : startPos; this.base = base;
+    s.onended = () => { if (this.src === s) { this.src = null; lane.stopPos = null; this.lane = null; redrawAll(); } };
+    loop();
+  },
+  playRange(lane, a, b) {
+    this.stop(true);
+    const c = ctx(); c.resume();
+    const data = takeAudio(lane); a = clamp(Math.round(a), 0, data.length); b = clamp(Math.round(b), a, data.length);
+    if (b - a < 64) return;
+    const buf = c.createBuffer(1, data.length, FS); buf.copyToChannel(data, 0);
+    const s = c.createBufferSource(); s.buffer = buf; s.connect(outBus); s.start(0, a / FS, (b - a) / FS);
+    this.src = s; this.lane = lane; this.start = c.currentTime; this.offset = a; this.base = 0;
+    s.onended = () => { if (this.src === s) { this.src = null; lane.stopPos = null; this.lane = null; redrawAll(); } };
+  },
+  playFast(lane, data, startPos) {
+    // ×1.4 with the voice at its own pitch: the browser's pitch-preserving media player
+    if (!lane._fx) { const el = new Audio(); el.preservesPitch = true; const n = ctx().createMediaElementSource(el); n.connect(outBus); lane._fx = { el, data: null, url: null }; }
+    const fx = lane._fx, el = fx.el;
+    if (fx.data !== data) { if (fx.url) URL.revokeObjectURL(fx.url); fx.url = URL.createObjectURL(f32wav(data)); el.src = fx.url; fx.data = data; }
+    el.playbackRate = 1.4; el.preservesPitch = true; el.currentTime = startPos / FS;
+    const src = { fast: el, stop() { el.pause(); } };
+    this.src = src; this.lane = lane; this.offset = startPos; this.base = 0;
+    el.onended = () => { if (this.src === src) { this.src = null; lane.stopPos = null; this.lane = null; redrawAll(); } };
+    el.play().catch(() => {}); loop();
+  },
+  pos() { if (!this.src) return null; if (this.src.fast) return Math.round(this.src.fast.currentTime * FS); return this.offset + Math.round((actx.currentTime - this.start) * FS); },
+  stop(quiet) {
+    if (this.src) { const p = this.pos(); const s = this.src; this.src = null; try { s.stop(); } catch (e) {} if (this.lane) this.lane.stopPos = p; }
+    this.lane = null; if (!quiet) redrawAll();
+  }
+};
+function togglePlay(fromCursor) {
+  if (Player.src && Player.lane === activeLane && !fromCursor) { Player.stop(); return; }
+  if (activeLane !== topL && !takes.includes(activeLane)) activeLane = topL;
+  stopPlayers();
+  Player.play(activeLane, !!fromCursor);
+}
+
+/* ================= drawing ================= */
+let topDirty = true;
+const FLAG_BAND = 18;
+function setupCanvas(cv) {
+  const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
+  if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+  // clear the whole bitmap in device pixels first: with display scaling (125 %, 90 %…) the CSS-pixel clear can leave the last row, and the playhead used to build up a white line there
+  const g = cv.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, cv.width, cv.height); g.setTransform(dpr, 0, 0, dpr, 0, 0); return { g, w, h };
+}
+function topRange() { return Math.max(M.len, FS * 30); }
+function topView() {
+  const N = topRange();
+  if (topL.fit || !topL.view) return [0, N];
+  let v0 = topL.view.v0, v1 = topL.view.v1; const w = Math.min(v1 - v0, N);
+  v0 = clamp(v0, 0, N - w); return [v0, v0 + w];
+}
+function laneBounds(lane) {
+  if (lane === topL) return [0, topRange()];
+  if (!lane.segs.length) return [0, FS * 10];
+  const L = tlen(lane); return [-lane.segs[0][0], L + (M.len - lane.segs[lane.segs.length - 1][1])];
+}
+function drawTop() {
+  $('topCard').classList.toggle('empty', !M.len && !rec.on);
+  const cv = $('topCanvas'); const { g, w, h } = setupCanvas(cv); g.clearRect(0, 0, w, h);
+  const [tv0, tv1] = topView(), x = i => (i - tv0) / (tv1 - tv0) * w, mid = h / 2;
+  if (topL.sel) { const a = Math.min(topL.sel[0], topL.sel[1]), b = Math.max(topL.sel[0], topL.sel[1]); g.fillStyle = 'rgba(255,255,255,.12)'; g.fillRect(x(a), 0, x(b) - x(a), h); }
+  drawCands(g, h, (a, b) => [[x(a), x(b)]]);
+  g.fillStyle = '#7E848D';
+  const spp = (tv1 - tv0) / w;
+  for (let px = 0; px < w; px++) { const i0 = tv0 + px * spp; if (i0 >= M.len) break; const p = M.peak(i0, i0 + Math.max(1, spp)); const hh = Math.min(mid - 3, p * 1.6 * (topL.amp || 1) * (mid - 3)); g.fillRect(px, mid - hh, 1, Math.max(1, hh * 2)); }
+  if (rec.on) { g.fillStyle = 'rgba(217,68,63,.15)'; g.fillRect(x(M.len), 0, w - x(M.len), h); }
+  g.strokeStyle = 'rgba(236,233,227,.55)'; g.setLineDash([2, 4]); g.lineWidth = 1; g.font = '10px sans-serif';
+  sess.recs.forEach((r, i) => { if (r.start > 0) { const xx = Math.round(x(r.start)) + .5; g.beginPath(); g.moveTo(xx, 0); g.lineTo(xx, h); g.stroke(); g.fillStyle = 'rgba(236,233,227,.7)'; g.fillText('録音' + (i + 1), xx + 3, h - 4); } });
+  g.setLineDash([]);
+  g.font = '11px sans-serif';
+  sess.recs.forEach(r => (r.gaps || []).forEach(gp => {   // input losses: red marker where it happened
+    const gx = Math.round(x(gp.pos != null ? gp.pos : r.start + gp.at * FS)); if (gx < -8 || gx > w + 8) return;
+    g.fillStyle = 'rgba(255,75,69,.85)'; g.fillRect(gx - 1, 0, 2, h); g.beginPath(); g.moveTo(gx - 6, h); g.lineTo(gx + 6, h); g.lineTo(gx, h - 9); g.closePath(); g.fill();
+  }));
+  marks.slice().sort((a, b) => a.pos - b.pos).forEach((m, k) => { g.fillStyle = '#F07A52'; g.fillRect(Math.round(x(m.pos)) - 1, 0, 2, h); g.fillStyle = '#F5A487'; g.fillText('区切り' + (k + 1), x(m.pos) + 4, 12); });
+  g.fillStyle = '#FFD27A'; g.fillRect(Math.round(x(topL.cursor)), 0, 2, h - 2);
+  if (Player.lane === topL) { const p = Player.pos(); g.fillStyle = '#fff'; g.fillRect(Math.round(x(p)), 0, 2, h - 2); }
+  else if (topL.stopPos != null && !topL.cursorMoved) { g.fillStyle = 'rgba(255,255,255,.4)'; g.fillRect(Math.round(x(topL.stopPos)), 0, 1, h - 2); }
+  $('topInfo').textContent = fmt(M.len / FS) + (rec.on ? '　録音中' : '') + '　／ 区切り ' + marks.length;
+}
+function drawTake(t) {
+  if (!t.dom) return; const cv = t.dom.cv; const { g, w, h: H } = setupCanvas(cv); g.clearRect(0, 0, w, H);
+  if (!t.segs.length) { g.fillStyle = '#9AA0A8'; g.font = '12px sans-serif'; g.fillText(t.slot ? '待機中：録音するとSPLITの順番でここに入ります（Ctrl+Vで貼り付けも可）' : '空のテイクです。クリックしてから Ctrl+V で貼り付けてください', 12, H / 2 + 4); t.dirty = false; return; }
+  const L = tlen(t), v0 = t.view.v0, v1 = t.view.v1, spp = (v1 - v0) / w, X = s => (s - v0) / (v1 - v0) * w;
+  // one-shot marks: ▼ in a thin band above the waveform
+  g.fillStyle = '#121418'; g.fillRect(0, 0, w, FLAG_BAND); g.fillStyle = '#2E3238'; g.fillRect(0, FLAG_BAND - 1, w, 1);
+  g.fillStyle = '#7FB8FF';
+  (t.flags || []).forEach(f => { const x = X(f); if (x < -6 || x > w + 6) return; g.beginPath(); g.moveTo(x - 5, 2); g.lineTo(x + 5, 2); g.lineTo(x, FLAG_BAND - 3); g.closePath(); g.fill(); });
+  g.save(); g.translate(0, FLAG_BAND); const h = H - FLAG_BAND, mid = h / 2;
+  const segFirst = t.segs[0], segLast = t.segs[t.segs.length - 1];
+  const minLocal = -segFirst[0], maxLocal = L + (M.len - segLast[1]);
+  // selection
+  if (t.sel) { const a = Math.min(t.sel[0], t.sel[1]), b = Math.max(t.sel[0], t.sel[1]); g.fillStyle = 'rgba(255,255,255,.13)'; g.fillRect(X(a), 0, X(b) - X(a), h); }
+  // 差し替え候補 (kept as master positions, so they follow cuts/pastes and only the remaining part stays coloured)
+  drawCands(g, h, (a, b) => { const out = []; let acc = 0; for (const sg of t.segs) { const lo = Math.max(a, sg[0]), hi = Math.min(b, sg[1]); if (hi > lo) out.push([X(acc + lo - sg[0]), X(acc + hi - sg[0])]); acc += sg[1] - sg[0]; } return out; });
+  // start-end region
+  if (t.start != null && t.end != null) { g.fillStyle = 'rgba(79,193,180,.10)'; g.fillRect(X(t.start), 0, X(t.end) - X(t.start), h); }
+  for (let px = 0; px < w; px++) {
+    const l0 = v0 + px * spp; if (l0 < minLocal || l0 >= maxLocal) continue;
+    const m0 = mapLocal(t, Math.floor(l0)); const p = M.peak(m0, m0 + Math.max(1, spp));
+    const hh = Math.min(mid - 3, p * 1.6 * t.amp * (mid - 3));
+    const inside = l0 >= 0 && l0 < L;
+    g.fillStyle = inside ? (t.start != null && t.end != null && l0 >= t.start && l0 < t.end ? '#7FD6CC' : '#A3A9B1') : '#4A4F57';
+    g.fillRect(px, mid - hh, 1, Math.max(1, hh * 2));
+  }
+  // outside shading
+  g.fillStyle = 'rgba(15,17,19,.55)'; if (X(0) > 0) g.fillRect(0, 0, X(0), h); if (X(L) < w) g.fillRect(X(L), 0, w - X(L), h);
+  // take edges + handles
+  g.fillStyle = '#4FC1B4';
+  [0, L].forEach(s => { const xx = X(s); if (xx >= -6 && xx <= w + 6) { g.fillRect(xx - 1, 0, 2, h); g.fillRect(xx - 3, mid - 14, 6, 28); } });
+  // segment boundaries
+  g.strokeStyle = 'rgba(236,233,227,.7)'; g.setLineDash([3, 3]); g.lineWidth = 1;
+  let acc = 0; for (let i = 0; i < t.segs.length - 1; i++) { acc += t.segs[i][1] - t.segs[i][0]; const xx = Math.round(X(acc)) + .5; g.beginPath(); g.moveTo(xx, 0); g.lineTo(xx, h); g.stroke(); }
+  g.setLineDash([]);
+  // start / end
+  g.font = '11px sans-serif';
+  if (t.start != null) { g.fillStyle = '#E8A33D'; g.fillRect(Math.round(X(t.start)) - 1, 0, 2, h); g.fillText('S', X(t.start) + 3, 11); }
+  if (t.end != null) { g.fillStyle = '#E8A33D'; g.fillRect(Math.round(X(t.end)) - 1, 0, 2, h); g.fillText('E', X(t.end) - 10, 11); }
+  // cursor & playhead
+  // (moving lines stop 2 px above the bottom edge: at 90 % display the edge row could keep traces of the playhead)
+  g.fillStyle = '#FFD27A'; g.fillRect(Math.round(X(t.cursor)) - 1, 0, 2, h - 2);
+  if (Player.lane === t) { const p = Player.pos(); g.fillStyle = '#fff'; g.fillRect(Math.round(X(p)), 0, 2, h - 2); }
+  else if (t.stopPos != null && !t.cursorMoved) { g.fillStyle = 'rgba(255,255,255,.4)'; g.fillRect(Math.round(X(t.stopPos)), 0, 1, h - 2); }
+  g.restore();
+  t.dirty = false;
+}
+function redrawAll() { topDirty = true; takes.forEach(t => t.dirty = true); }
+let looping = false, lastTopDraw = 0;
+function loop() {
+  if (looping) return; looping = true;
+  const step = () => {
+    const nowT = performance.now();
+    if (topDirty || Player.lane === topL || (rec.on && nowT - lastTopDraw > 100)) { if (rec.on) updateLive(); drawTop(); topDirty = false; lastTopDraw = nowT; }
+    takes.forEach(t => { if (t.dirty || Player.lane === t) drawTake(t); if (t.dom && t.dom.audio && !t.dom.audio.paused) updSeek(t); });
+    drawVU();
+    if (rec.on) $('btnRec').textContent = '■ 録音中　' + fmt(M.len / FS);
+    requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+loop();
+window.addEventListener('resize', redrawAll);
+
+/* ================= VU meter ================= */
+const vu = { y: 0, v: 0, last: performance.now(), lampUntil: 0 };
+const VU_REF = 0.1 * 2 / Math.PI; // sine at -20 dBFS peak -> rectified average
+const vuBuf = new Float32Array(2048);
+function vuPos(db) { const p = (Math.pow(10, db / 20) - 0.1) / (Math.pow(10, 3 / 20) - 0.1); return clamp(p, -0.04, 1.06); }
+function drawVU() {
+  const now = performance.now(); const dt = Math.min(0.1, (now - vu.last) / 1000); vu.last = now;
+  let e = 0, pk = 0, src = '停止中';
+  const playing = Player.src || playersActive();
+  if (playing && analyser) {
+    analyser.getFloatTimeDomainData(vuBuf); let s = 0; for (let i = 0; i < vuBuf.length; i++) { const a = Math.abs(vuBuf[i]); s += a; if (a > pk) pk = a; } e = s / vuBuf.length; src = '再生中';
+    mic.inAbs = 0; mic.inN = 0; mic.inPeak = 0;
+  } else if (mic.stream) {
+    // input arrives in 50 ms blocks but the needle moves ~60 times a second: when no new block came in this frame, keep the last level instead of reading it as silence
+    if (mic.inN) { vu.lastIn = mic.inAbs / mic.inN; vu.lastInPk = mic.inPeak; }
+    e = vu.lastIn || 0; pk = mic.inN ? mic.inPeak : 0; mic.inAbs = 0; mic.inN = 0; mic.inPeak = 0; src = '録音入力';
+  }
+  // critically damped needle, 99% in 300 ms
+  const w = 22.1; const sub = 4;
+  for (let i = 0; i < sub; i++) { const h = dt / sub; const a = w * w * (e - vu.y) - 2 * w * vu.v; vu.v += a * h; vu.y += vu.v * h; }
+  if (pk > dbToGain(S.peakThr)) vu.lampUntil = now + 1500;
+  $('peakLamp').classList.toggle('on', now < vu.lampUntil);
+  $('vuSrc').textContent = src;
+  const cv = $('vuCanvas'), g = cv.getContext('2d'); const W = 240, H = 120; g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, cv.width, cv.height); g.setTransform(cv.width / W, 0, 0, cv.height / H, 0, 0);
+  g.fillStyle = '#EFE6CC'; g.fillRect(0, 0, W, H);
+  const cx = 120, cy = 128, P = (v, r) => { const a = (-50 + 100 * vuPos(v)) * Math.PI / 180; return [cx + r * Math.sin(a), cy - r * Math.cos(a)]; };
+  g.lineWidth = 1.5; g.strokeStyle = '#2B2A26'; g.beginPath(); for (let v = -20; v <= 0.001; v += 0.25) { const [x, y] = P(v, 92); v === -20 ? g.moveTo(x, y) : g.lineTo(x, y); } g.stroke();
+  g.lineWidth = 5; g.strokeStyle = '#D9443F'; g.beginPath(); for (let v = 0; v <= 3.001; v += 0.1) { const [x, y] = P(v, 92); v === 0 ? g.moveTo(x, y) : g.lineTo(x, y); } g.stroke();
+  g.lineWidth = 1.5;
+  [-20, -10, -7, -5, -3, -2, -1, 0, 1, 2, 3].forEach(v => { const [x1, y1] = P(v, 92), [x2, y2] = P(v, 82); g.strokeStyle = v > 0 ? '#D9443F' : '#2B2A26'; g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); });
+  g.font = '11px sans-serif'; g.textAlign = 'center';
+  [-20, -10, -7, -5, -3, 0, 3].forEach(v => { const [x, y] = P(v, 104); g.fillStyle = v > 0 ? '#B3302B' : '#2B2A26'; g.fillText((v > 0 ? '+' : '') + v, x, y); });
+  g.font = 'bold 16px sans-serif'; g.fillStyle = '#2B2A26'; g.fillText('VU', 120, 96);
+  g.font = '9px sans-serif'; g.fillText('0VU = -20dBFS', 120, 106);
+  const db = vu.y > 1e-6 ? gainToDb(vu.y / VU_REF) : -60;
+  const [nx, ny] = P(clamp(db, -40, 4), 98);
+  g.strokeStyle = '#111'; g.lineWidth = 1.6; g.beginPath(); g.moveTo(cx, cy); g.lineTo(nx, ny); g.stroke();
+  g.fillStyle = '#2A2D33'; g.fillRect(0, 108, W, 12);
+}
+
+/* ================= take DOM ================= */
+function rebuildTakeDom() {
+  const box = $('takes'); box.querySelectorAll('.take').forEach(n => n.remove());
+  $('takesEmpty').style.display = takes.length ? 'none' : '';
+  takes.forEach((t, i) => { t.name = (i + 1) + '本目'; t.dom = null; buildTakeDom(t); box.appendChild(t.dom.root); updTakeDom(t); t.dirty = true; });
+}
+function buildTakeDom(t) {
+  const root = document.createElement('section'); root.className = 'take';
+  root.innerHTML = `
+    <div class="info"><div class="name"></div><div class="meta m1"></div><div class="meta m2"></div><span class="badge"></span></div>
+    <div class="ebtns">
+      <button class="noEd" title="言い直しのないテイク用：エンドからさかのぼって、言い始めにスタートを打ちます">編集なし</button>
+      <button class="pS" title="スタートから再生">▶ START</button>
+      <button class="pE" title="エンドの2秒前から再生して、エンドで止まる">▶ END</button>
+    </div>
+    <div class="mcol"><button class="flagb" title="一時マーク（録音中の行は今の位置、確定後はカーソルの位置）" aria-label="一時マーク"><span class="fv">▼</span><span class="fl">MARK</span></button><button class="spdb" title="押すたびに 1.4倍／等速（声の高さはそのまま）">×1.4</button></div>
+    <div class="cvwrap"><canvas class="lane"></canvas><button class="fitb" title="区切りの間（スタート・エンドがあればその間）を枠いっぱいに">全体</button></div>
+    <div class="side">
+      <div class="gainrow"><span class="lbl">ナレ音量</span><button class="gm" aria-label="ナレ音量を下げる">−</button><span class="val"></span><button class="gp" aria-label="ナレ音量を上げる">＋</button></div>
+      <div class="gainrow"><span class="lbl nlk" title="StartからEndまでのナレのラウドネス（ナレ音量を含む）">Start/End —</span><button class="lvl" title="StartからEndまでのナレを目標のラウドネスに合わせる（全体を一律に上げ下げ）">レベル調整</button><button class="lvoff" title="ナレ音量を0dBに戻す">解除</button></div>
+      <div class="okeinfo oi"></div>
+      <div class="okeinfo pm"></div>
+      <div class="warn"></div>
+    </div>
+    <div class="row2">
+      <button class="pbtn" aria-label="完成品を確認再生" disabled>▶</button>
+      <div class="speedbar" title="確認再生の速さ（声の高さはそのまま）"></div>
+      <div class="seek"><span class="ptime">0.0 / 0.0秒</span><input type="range" class="seekbar" min="0" max="1000" value="0" step="1" disabled aria-label="完成品の再生位置"></div>
+      <div class="acts">
+        <button class="kE">入り早く</button><button class="kL">入り遅く</button>
+        <button class="vS">オケ短く</button><button class="vL">オケ長く</button>
+        <button class="primary mk">Done</button>
+      </div>
+      <label class="fnwrap"><input type="text" class="fname" spellcheck="false" placeholder="ファイル名" aria-label="書き出すファイル名"><span>.wav</span></label>
+    </div>`;
+  const q = s => root.querySelector(s);
+  t.dom = { nlk: q('.nlk'), lvl: q('.lvl'), fname: q('.fname'), seek: q('.seekbar'), root, cv: q('canvas'), name: q('.name'), m1: q('.m1'), m2: q('.m2'), badge: q('.badge'), gainV: q('.val'), oke: q('.oi'), warn: q('.warn'), pbtn: q('.pbtn'), pt: q('.ptime'), pm: q('.pm'), speedbar: q('.speedbar'), mk: q('.mk'), audio: null };
+  const stepGain = dir => {
+    pushUndo(); t.autoLv = false; const q = t.gain / 0.5;
+    t.gain = Math.abs(q - Math.round(q)) < 1e-6 ? Math.round(q) * 0.5 + dir * 0.5 : (dir > 0 ? Math.ceil(q) : Math.floor(q)) * 0.5;   // odd values snap to the 0.5 grid first
+    t.gain = Math.round(t.gain * 10) / 10; t.cache = null; updTakeDom(t); scheduleAutosave();
+  };
+  q('.gm').onclick = () => stepGain(-1);
+  q('.gp').onclick = () => stepGain(1);
+  q('.lvoff').onclick = () => { if (!t.leveled && !t.gain) return; pushUndo(); t.gain = 0; t.leveled = false; t.autoLv = false; t.cache = null; updTakeDom(t); scheduleAutosave(); };
+  q('.flagb').onclick = () => addFlag(t);
+  q('.spdb').classList.toggle('on', !!t.fast);
+  q('.spdb').onclick = e => {
+    t.fast = !t.fast; e.currentTarget.classList.toggle('on', t.fast);
+    if (Player.lane === t && Player.src) {   // keep playing from where it is, now at the new speed
+      const p = Player.pos(); Player.stop(true); t.stopPos = p; t.cursorMoved = false; Player.play(t, false);
+    }
+  };
+  q('.lvl').onclick = () => levelNarr(t);
+  q('.kE').onclick = () => { t.kAdj--; updTakeDom(t); scheduleAutosave(); };
+  q('.kL').onclick = () => { t.kAdj++; updTakeDom(t); scheduleAutosave(); };
+  q('.vS').onclick = () => { t.vAdj--; updTakeDom(t); scheduleAutosave(); };
+  q('.vL').onclick = () => { t.vAdj++; updTakeDom(t); scheduleAutosave(); };
+  t.dom.mk.onclick = () => make(t);
+  [0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0].forEach(sp => {
+    const b = document.createElement('button'); b.textContent = sp.toFixed(1); b.dataset.sp = sp;
+    b.onclick = () => { t.speed = sp; if (t.dom.audio) t.dom.audio.playbackRate = sp; updSpeed(t); };
+    t.dom.speedbar.appendChild(b);
+  });
+  t.speed = t.speed || 1.0; updSpeed(t);
+  t.dom.pbtn.onclick = () => togglePlayer(t);
+  q('.fitb').onclick = () => fitFocus(t);
+  q('.fitb').addEventListener('pointerdown', e => e.stopPropagation());
+  q('.noEd').onclick = () => noEditStart(t);
+  const fn = t.dom.fname;
+  const selPh = from => { const i = fn.value.indexOf('○○', from); if (i >= 0) { fn.setSelectionRange(i, i + 2); return true; } return false; };
+  let justFocused = false;
+  const onFocusSel = () => { if (!selPh(0)) { fn.setSelectionRange(fn.value.length, fn.value.length); fn.scrollLeft = fn.scrollWidth; } };
+  fn.addEventListener('focus', () => { justFocused = true; setTimeout(onFocusSel, 0); });
+  fn.addEventListener('mouseup', e => { if (justFocused) { justFocused = false; if (fn.value.includes('○○')) { e.preventDefault(); selPh(0); } } });
+  fn.addEventListener('blur', () => { justFocused = false; });
+  fn.addEventListener('keydown', e => {
+    if (e.key === 'Tab' && fn.value.includes('○○')) { e.preventDefault(); if (!selPh(fn.selectionEnd)) selPh(0); }
+    else if (e.key === 'Enter') { e.preventDefault(); fn.blur(); }
+  });
+  fn.addEventListener('input', () => { t.fileName = fn.value; scheduleAutosave(); });
+  q('.pS').onclick = () => { stopPlayers(); setActive(t); if (t.segs.length) editZoomAt(t, t.start != null ? t.start : 0, 1 / Math.max(0.5, S.editZoom || 4)); Player.playRange(t, t.start != null ? t.start : 0, t.end != null ? t.end : tlen(t)); };
+  q('.pE').onclick = () => { if (t.end == null) { toast('先にエンドを打ってください'); return; } stopPlayers(); setActive(t); editZoomAt(t, t.end, 1 - 1 / Math.max(0.5, S.editZoom || 4)); Player.playRange(t, Math.max(t.start != null ? t.start : 0, t.end - 2 * FS), t.end); };
+  t.dom.seek.addEventListener('pointerdown', () => { t.seeking = true; });
+  const endSeek = () => { t.seeking = false; t.dom.seek.blur(); };
+  t.dom.seek.addEventListener('pointerup', endSeek); t.dom.seek.addEventListener('pointercancel', endSeek); t.dom.seek.addEventListener('change', endSeek);
+  t.dom.seek.addEventListener('input', () => {
+    const a = ensureAudio(t); if (!a) return;
+    const d = a.duration || t.made.dur; a.currentTime = +t.dom.seek.value / 1000 * d; updSeek(t);
+  });
+  attachLaneEvents(t.dom.cv, t);
+  root.addEventListener('pointerdown', () => setActive(t), true);
+}
+function narrMeasure(t) {
+  if (t.start == null || t.end == null || t.end - t.start < FS * 0.5) return null;
+  const key = JSON.stringify([t.segs, t.start, t.end, t.gain]);
+  if (t._lkKey === key) return t._lk;
+  const x = renderSegs(sliceSegs(t.segs, t.start, t.end), t.gain);
+  let pk = 0; for (let i = 0; i < x.length; i++) { const a = Math.abs(x[i]); if (a > pk) pk = a; }
+  t._lk = { lk: lkfs(x, x), peak: pk }; t._lkKey = key; return t._lk;
+}
+function levelNarr(t) {
+  if (t.live) return;
+  const m = narrMeasure(t); if (!m || !Number.isFinite(m.lk)) { toast('先にスタートとエンドを打ってください'); return; }
+  const d = S.narTarget - m.lk; if (Math.abs(d) < 0.05) { toast('もう目標のレベルです'); return; }
+  pushUndo(); t.gain = Math.round((t.gain + d) * 10) / 10; t.leveled = true; t.autoLv = true; t.cache = null; updTakeDom(t); scheduleAutosave();
+  toast(`ナレ音量を ${(d > 0 ? '+' : '') + d.toFixed(1)} dB 調整しました` + (gainToDb(m.peak) + d > S.peakCeil ? '（ピークが上限を超えます）' : ''), 3000);
+}
+function addFlag(t) {
+  if (!t.segs.length) return;
+  const pos = t.live ? Math.max(0, M.len - t.segs[0][0]) : t.cursor;   // live row: the current recording point / otherwise: the cursor
+  t.flags = t.flags || []; t.flags.push(Math.round(pos)); t.dirty = true; scheduleAutosave();
+}
+/* edit zoom: S.editZoom seconds across the frame, with the point `at` placed at `frac` of the width */
+function editZoomAt(t, at, frac, sec) {
+  const W = Math.max(0.2, sec || S.editZoom || 4) * FS;
+  t.view.v0 = Math.round(at - W * frac); t.view.v1 = t.view.v0 + W; t.autoView = false; t.dirty = true;
+}
+function fitFocus(t) {
+  const L = tlen(t); let a = 0, b = L;
+  if (t.start != null && t.end != null) { a = t.start; b = t.end; }
+  const pad = Math.round((b - a) * 0.06); t.view.v0 = a - pad; t.view.v1 = b + pad; t.dirty = true;
+}
+function updSeek(t) {
+  const a = t.dom.audio; const d = a && a.duration ? a.duration : (t.made ? t.made.dur : 0); const c = a ? a.currentTime : 0;
+  t.dom.pt.textContent = c.toFixed(1) + ' / ' + d.toFixed(1) + '秒';
+  if (!t.seeking) t.dom.seek.value = d ? Math.round(c / d * 1000) : 0;
+}
+function updSpeed(t) { t.dom.speedbar.querySelectorAll('button').forEach(b => b.classList.toggle('on', Math.abs(+b.dataset.sp - t.speed) < 1e-6)); }
+function setActive(l) { activeLane = l; takes.forEach(t => t.dom && t.dom.root.classList.toggle('active', t === l)); }
+function updTakeDom(t) {
+  if (!t.dom) return;
+  const L = tlen(t);
+  t.dom.name.textContent = t.name;
+  t.dom.m1.textContent = (t.live ? '録音中 ' : '全長 ') + fmtS(L);
+  const hasSE = t.start != null && t.end != null;
+  t.dom.m2.textContent = 'Start/End ' + (hasSE ? fmtS(t.end - t.start) : '未設定');
+  t.dom.badge.className = 'badge' + (t.made ? ' ok' : (t.edited ? ' edit' : ''));
+  t.dom.badge.textContent = t.made ? 'Done済み' : (t.edited ? '編集中' : '未Done');
+  if (!t.segs.length && !t.live) { t.dom.badge.className = 'badge'; t.dom.badge.textContent = '待機中'; }
+  t.dom.gainV.textContent = (t.gain > 0 ? '+' : '') + t.gain.toFixed(1) + ' dB';
+  const nm = t.live ? null : narrMeasure(t);
+  t.dom.nlk.textContent = 'Start/End ' + (nm && Number.isFinite(nm.lk) ? nm.lk.toFixed(1) + ' LKFS' : '—');
+  t.dom.nlk.classList.toggle('over', !!(nm && gainToDb(nm.peak) > S.peakCeil));
+  t.dom.lvl.disabled = !!t.live;
+  t.dom.lvl.classList.toggle('on', !!t.leveled);
+  t.dom.root.querySelector('.lvoff').disabled = !t.leveled && !t.gain;
+  const plan = hasSE ? planMake(t) : null;
+  if (!hasSE) t.dom.oke.innerHTML = 'オケ：スタートとエンドを打つと決まります';
+  else if (!plan) t.dom.oke.innerHTML = 'オケ：' + (bgm.list.length ? '合う長さがありません' : 'オケのフォルダが未設定です');
+  else t.dom.oke.innerHTML = `オケ <b title="${plan.v.name}">${plan.v.dur.toFixed(1)}秒</b>　入り <b>${plan.p.toFixed(2)}</b>　余り <b>${plan.rem.toFixed(2)}</b>` + (t.kAdj || t.vAdj ? `<br><span class="warn">手動：入り ${t.kAdj > 0 ? '+' : ''}${t.kAdj}拍／オケ ${t.vAdj > 0 ? '+' : ''}${t.vAdj}</span>` : '');
+  t.dom.warn.textContent = plan && plan.warn ? plan.warn : '';
+  t.dom.mk.textContent = 'Done';
+  if (t.fileName == null) t.fileName = S.fnTemplate || '';
+  if (document.activeElement !== t.dom.fname) t.dom.fname.value = t.fileName;
+  t.dom.root.classList.toggle('live', !!t.live);
+  ['.kE', '.kL', '.vS', '.vL', '.mk', '.pE'].forEach(c => t.dom.root.querySelector(c).disabled = !!t.live);
+  if (t.live) { t.dom.badge.className = 'badge live'; t.dom.badge.textContent = '● 録音中'; }
+  t.dom.pbtn.disabled = !(t.made && t.made.url); t.dom.seek.disabled = t.dom.pbtn.disabled; if (!t.dom.audio) updSeek(t);
+  t.dom.pm.textContent = t.made ? `${t.made.dur.toFixed(1)}秒　${Number.isFinite(t.made.lkfs) ? t.made.lkfs.toFixed(1) : '—'} LKFS　ピーク ${Number.isFinite(t.made.peak) ? t.made.peak.toFixed(1) : '—'}` + (t.made.url ? '' : '（再生はもう一度Done）') : '';
+  t.dom.pm.title = t.made ? t.made.file : '';
+  t.dirty = true;
+}
+
+/* ================= lane mouse events ================= */
+let menuEl = null;
+function closeMenu() { if (menuEl) { if (menuEl._back) menuEl._back.remove(); menuEl.remove(); menuEl = null; } }
+const MI_S = '<span class="mi-l"><span class="mi-b">S</span><span class="mi-y">START をマーク</span></span>';
+const MI_C = '<span class="mi-c">差し替え候補</span>';
+const MI_E = '<span class="mi-l"><span class="mi-b">E</span><span class="mi-y">END をマーク</span></span>';
+function showMenu(x, y, items) {
+  closeMenu(); menuEl = document.createElement('div'); menuEl.className = 'menu';
+  items.forEach(it => { if (it === '-') { const d = document.createElement('div'); d.className = 'msep'; menuEl.appendChild(d); return; } const [label, key, fn] = it; const b = document.createElement('button'); b.innerHTML = label + (key ? `<span class="kbd">${key}</span>` : ''); b.onclick = () => { closeMenu(); fn(); }; menuEl.appendChild(b); });
+  document.body.appendChild(menuEl);
+  const r = menuEl.getBoundingClientRect(); menuEl.style.left = Math.min(x, innerWidth - r.width - 8) + 'px'; menuEl.style.top = Math.min(y, innerHeight - r.height - 8) + 'px';
+}
+document.addEventListener('pointerdown', e => { if (menuEl && !menuEl.classList.contains('dialog') && !menuEl.contains(e.target)) closeMenu(); });
+function laneGeom(cv, lane) {
+  const r = cv.getBoundingClientRect();
+  if (lane === topL) { const [v0, v1] = topView(); return { r, toS: cx => v0 + (cx - r.left) / r.width * (v1 - v0), toX: s => r.left + (s - v0) / (v1 - v0) * r.width }; }
+  const v0 = lane.view.v0, v1 = lane.view.v1;
+  return { r, toS: cx => v0 + (cx - r.left) / r.width * (v1 - v0), toX: s => r.left + (s - v0) / (v1 - v0) * r.width };
+}
+function nearSE(G, lane, x, px) {
+  let best = null, bd = px + 1;
+  for (const w of ['start', 'end']) { const v = lane[w]; if (v == null) continue; const d = Math.abs(G.toX(v) - x); if (d < bd) { bd = d; best = w; } }
+  return best;
+}
+function attachLaneEvents(cv, lane) {
+  let drag = null;
+  cv.addEventListener('pointerdown', e => {
+    if (e.button !== 0) return;
+    setActive(lane); closeMenu();
+    const G = laneGeom(cv, lane); const s = G.toS(e.clientX);
+    lane._clicks = [(lane._clicks || []).slice(-1)[0], { s, t: performance.now() }].filter(Boolean);
+    if (lane === topL) {
+      const m = marks.find(m => Math.abs(G.toX(m.pos) - e.clientX) <= 5);
+      if (m && !rec.on) { pushUndo(); drag = { type: 'mark', m }; cv.setPointerCapture(e.pointerId); return; }
+    } else if (lane.segs.length && nearSE(G, lane, e.clientX, 5) && !(lane.live && nearSE(G, lane, e.clientX, 5) === 'end')) {
+      const w = nearSE(G, lane, e.clientX, 5);
+      pushUndo(); drag = { type: 'se', w, x0: e.clientX }; cv.setPointerCapture(e.pointerId); return;
+    } else if (!lane.live && lane.segs.length) {
+      const L = tlen(lane);
+      const spp = (lane.view.v1 - lane.view.v0) / G.r.width;
+      if (Math.abs(G.toX(0) - e.clientX) <= 6) { pushUndo(); drag = { type: 'hL', x0: e.clientX, spp, m0: lane.segs[0][0] }; cv.setPointerCapture(e.pointerId); return; }
+      if (Math.abs(G.toX(L) - e.clientX) <= 6) { pushUndo(); drag = { type: 'hR', x0: e.clientX, spp, m0: lane.segs[lane.segs.length - 1][1] }; cv.setPointerCapture(e.pointerId); return; }
+    }
+    drag = { type: 'sel', x0: e.clientX, s0: s }; cv.setPointerCapture(e.pointerId);
+  });
+  cv.addEventListener('pointermove', e => {
+    const G = laneGeom(cv, lane);
+    if (!drag) {
+      let near = false;
+      if (lane === topL) near = marks.some(m => Math.abs(G.toX(m.pos) - e.clientX) <= 5);
+      else near = lane.segs.length > 0 && (!!nearSE(G, lane, e.clientX, 5) || (!lane.live && (Math.abs(G.toX(0) - e.clientX) <= 6 || Math.abs(G.toX(tlen(lane)) - e.clientX) <= 6)));
+      cv.style.cursor = near ? 'ew-resize' : 'text'; return;
+    }
+    const s = G.toS(e.clientX);
+    if (drag.type === 'mark') { moveMark(drag.m, s); }
+    else if (drag.type === 'se' && (drag.moved || Math.abs(e.clientX - drag.x0) > 2)) {
+      const L = lane.live ? Math.max(0, M.len - lane.segs[0][0]) : tlen(lane), gap = Math.round(0.05 * FS);
+      let v = Math.round(clamp(s, 0, L));
+      if (drag.w === 'start' && lane.end != null) v = Math.min(v, lane.end - gap);
+      if (drag.w === 'end' && lane.start != null) v = Math.max(v, lane.start + gap);
+      lane[drag.w] = clamp(v, 0, L); drag.moved = true;
+    }
+    else if (drag.type === 'hL') {
+      const seg = lane.segs[0];
+      const ns = clamp(Math.round(drag.m0 + (e.clientX - drag.x0) * drag.spp), 0, seg[1] - 480); const real = ns - seg[0];
+      if (real) {
+        seg[0] = ns;
+        const f = v => v == null ? v : Math.max(0, v - real);
+        lane.start = f(lane.start); lane.end = f(lane.end); lane.cursor = f(lane.cursor); if (lane.stopPos != null) lane.stopPos = f(lane.stopPos);
+        if (lane.flags) lane.flags = lane.flags.map(f);
+        lane.view.v0 -= real; lane.view.v1 -= real; markEdited(lane);
+      }
+    } else if (drag.type === 'hR') {
+      const seg = lane.segs[lane.segs.length - 1];
+      const ne = clamp(Math.round(drag.m0 + (e.clientX - drag.x0) * drag.spp), seg[0] + 480, M.len); const real = ne - seg[1];
+      if (real) { seg[1] = ne; const L = tlen(lane); if (lane.end != null && lane.end > L) lane.end = L; if (lane.start != null && lane.start >= L) lane.start = null; if (lane.cursor > L) lane.cursor = L; markEdited(lane); }
+    } else if (drag.type === 'sel' && Math.abs(e.clientX - drag.x0) > 3 && !lane.live) {
+      const lim = lane === topL ? M.len : tlen(lane);
+      lane.sel = [clamp(drag.s0, 0, lim), clamp(s, 0, lim)];
+    }
+    if (lane === topL) topDirty = true; else lane.dirty = true;
+  });
+  cv.addEventListener('pointerup', e => {
+    if (!drag) return;
+    const G = laneGeom(cv, lane);
+    if (drag.type === 'sel' && Math.abs(e.clientX - drag.x0) <= 3) {
+      const lim = lane === topL ? M.len : tlen(lane);
+      lane.cursor = Math.round(clamp(G.toS(e.clientX), 0, lim)); lane.cursorMoved = true; lane.sel = null;
+    }
+    if (drag.type === 'hL' || drag.type === 'hR') { afterEdit(lane); }
+    if (drag.type === 'se') { if (drag.moved) { resetIfLenChanged(lane); autoLevel(lane); lane.cache = null; updTakeDom(lane); scheduleAutosave(); } else { undoStack.pop(); lane.cursor = Math.round(clamp(G.toS(e.clientX), 0, lane.live ? Math.max(0, M.len - lane.segs[0][0]) : tlen(lane))); lane.cursorMoved = true; lane.sel = null; } }
+    if (drag.type === 'mark') { scheduleAutosave(); takes.forEach(updTakeDom); }
+    drag = null; if (lane === topL) topDirty = true; else lane.dirty = true;
+  });
+  cv.addEventListener('dblclick', e => {
+    const G = laneGeom(cv, lane); const s = G.toS(e.clientX);
+    if (lane === topL) {   // the recording lane is split only with SPLIT / M / right-click
+      if ((e.ctrlKey || e.metaKey) && M.len) {   // Ctrl+double-click: cursor where the FIRST click was, 1 s around it
+        const c = lane._clicks && lane._clicks.length === 2 && lane._clicks[1].t - lane._clicks[0].t < 700 ? lane._clicks[0].s : G.toS(e.clientX);
+        topL.cursor = Math.round(clamp(c, 0, M.len)); topL.cursorMoved = true; topL.sel = null;
+        const W = Math.max(0.2, S.dblZoom || 1) * FS; topL.fit = false; topL.view = { v0: Math.round(topL.cursor - W / 2), v1: Math.round(topL.cursor + W / 2) }; topDirty = true;
+      }
+      return;
+    }
+    if ((e.ctrlKey || e.metaKey) && lane.segs.length) {   // Ctrl+double-click: cursor where the FIRST click was, then the edit zoom around it
+      const c = lane._clicks && lane._clicks.length === 2 && lane._clicks[1].t - lane._clicks[0].t < 700 ? lane._clicks[0].s : G.toS(e.clientX);
+      const lim = lane.live ? Math.max(0, M.len - lane.segs[0][0]) : tlen(lane);
+      lane.cursor = Math.round(clamp(c, 0, lim)); lane.cursorMoved = true; lane.sel = null;
+      editZoomAt(lane, lane.cursor, 0.5, S.dblZoom || 1); return;
+    }
+    if (lane.live) return;
+    let acc = 0; for (const sg of lane.segs) { const l = sg[1] - sg[0]; if (s >= acc && s < acc + l) { lane.sel = [acc, acc + l]; lane.dirty = true; return; } acc += l; }
+  });
+  cv.addEventListener('contextmenu', e => {
+    e.preventDefault(); setActive(lane);
+    const G = laneGeom(cv, lane);
+    if (lane === topL) {
+      const m = marks.find(m => Math.abs(G.toX(m.pos) - e.clientX) <= 8);
+      if (m) { showMenu(e.clientX, e.clientY, [['この区切りを削除', '', () => deleteMark(m)]]); return; }
+      const r = selRange(topL), sx = G.toS(e.clientX);
+      if (r && sx >= r[0] && sx <= r[1]) { showMenu(e.clientX, e.clientY, [['コピー', 'Ctrl+C', () => copySel(topL)], ['選択範囲をWAVで書き出す', '', () => exportSelection(topL)], [MI_C, '', () => findCands(r, topL)]]); return; }
+      if (Math.abs(G.toX(topL.cursor) - e.clientX) <= 12) showMenu(e.clientX, e.clientY, [['ここで区切る（SPLIT）', 'M', () => addMark(topL.cursor)]]);
+      return;
+    }
+    if (e.clientY - G.r.top < FLAG_BAND + 6 && lane.flags && lane.flags.length) {
+      let best = -1, bd = 1e9; lane.flags.forEach((f, i) => { const d = Math.abs(G.toX(f) - e.clientX); if (d < bd) { bd = d; best = i; } });
+      if (bd <= 10) { showMenu(e.clientX, e.clientY, [['一時マークを削除', '', () => { lane.flags.splice(best, 1); lane.dirty = true; scheduleAutosave(); }]]); return; }
+    }
+    const seW = nearSE(G, lane, e.clientX, 8);
+    const seDel = seW ? [[seW === 'start' ? 'START を削除' : 'END を削除', '', () => clearStartEnd(lane, seW)], '-'] : [];
+    const at = Math.round(clamp(G.toS(e.clientX), 0, lane.live ? Math.max(0, M.len - lane.segs[0][0]) : tlen(lane)));
+    if (lane.live) {
+      const nearCur = Math.abs(G.toX(lane.cursor) - e.clientX) <= 12;
+      showMenu(e.clientX, e.clientY, seDel.concat([[MI_S, '', () => setStartEnd(lane, 'start', nearCur ? lane.cursor : at)]]));
+      return;
+    }
+    const sx = G.toS(e.clientX), r = selRange(lane);
+    if (r && sx >= r[0] && sx <= r[1]) {
+      const items = [
+        ['カット', 'Ctrl+X', () => cutSel(lane)],
+        ['コピー', 'Ctrl+C', () => copySel(lane)],
+        ['貼り付け（差し替え）', 'Ctrl+V', () => paste(lane)],
+        ['削除', 'Delete', () => opDelete(lane, r[0], r[1])],
+        ['選択範囲をWAVで書き出す', '', () => exportSelection(lane)],
+        [MI_C, '', () => findCands(r, lane)]
+      ];
+      const bi = boundariesIn(lane, r[0], r[1]);
+      if (bi.n) items.unshift(['結合（分割線を消す）', '', () => opJoin(lane, r[0], r[1])]);
+      showMenu(e.clientX, e.clientY, items); return;
+    }
+    if (!lane.segs.length) return;
+    if (Math.abs(G.toX(lane.cursor) - e.clientX) > 12) {   // away from the cursor: Start/End right where you clicked (the cursor stays)
+      showMenu(e.clientX, e.clientY, seDel.concat([
+        [MI_S, '', () => setStartEnd(lane, 'start', at)],
+        [MI_E, '', () => setStartEnd(lane, 'end', at)]
+      ]));
+      return;
+    }
+    showMenu(e.clientX, e.clientY, seDel.concat([
+      [MI_S, '', () => setStartEnd(lane, 'start', lane.cursor)],
+      [MI_E, '', () => setStartEnd(lane, 'end', lane.cursor)],
+      '-',
+      ['分割', 'Ctrl+S', () => { if (!opSplit(lane, lane.cursor)) toast('ここでは分割できません'); }],
+      ['貼り付け', 'Ctrl+V', () => paste(lane)]
+    ]));
+  });
+  cv.addEventListener('wheel', e => {
+    if (!(e.ctrlKey || e.metaKey || e.shiftKey || e.altKey)) return; // plain wheel: normal page scroll
+    e.preventDefault();
+    const [mn, mx] = laneBounds(lane);
+    let v0, v1;
+    if (lane === topL) { [v0, v1] = topView(); } else { v0 = lane.view.v0; v1 = lane.view.v1; }
+    const setView = (a, b) => {
+      if (lane === topL) {
+        if (a <= mn + 1 && b >= mx - 1) { topL.fit = true; } else { topL.fit = false; topL.view = { v0: a, v1: b }; }
+        topDirty = true;
+      } else { lane.view.v0 = a; lane.view.v1 = b; lane.dirty = true; lane.autoView = false; }
+    };
+    if (e.ctrlKey || e.metaKey) {
+      const G = laneGeom(cv, lane); const s = G.toS(e.clientX); const f = Math.exp((e.deltaY || e.deltaX) * 0.0015);
+      let a = s - (s - v0) * f, b = s + (v1 - s) * f;
+      if (b - a < 200) { const c = (a + b) / 2; a = c - 100; b = c + 100; }
+      let pinned = false;
+      if (lane !== topL && f > 1) {
+        // zooming out with the mouse inside the take: keep the take's edges pinned near the frame
+        const L = tlen(lane);
+        if (s >= 0 && s <= L) {
+          const pad = 0.05 * (b - a), lo = -pad, hi = L + pad;
+          pinned = true;
+          const loE = Math.min(lo, v0), hiE = Math.max(hi, v1);
+          if (b - a >= hiE - loE) { a = loE; b = hiE; if (v0 >= lo && v1 <= hi) { const pf = Math.round(L * 0.06); a = -pf; b = L + pf; } }
+          else { if (a < loE) { b += loE - a; a = loE; } if (b > hiE) { a -= b - hiE; b = hiE; } }
+        }
+      }
+      if (pinned) { a = Math.max(a, mn); b = Math.min(b, mx); }
+      else {
+        if (b - a > mx - mn) { a = mn; b = mx; }
+        if (a < mn) { b += mn - a; a = mn; } if (b > mx) { a -= b - mx; b = mx; }
+      }
+      setView(Math.max(a, mn), Math.min(b, mx));
+    } else if (e.shiftKey) {
+      const d = e.deltaY || e.deltaX;
+      lane.amp = clamp((lane.amp || 1) * Math.exp(-d * 0.002), 0.25, 64);
+      if (lane === topL) topDirty = true; else lane.dirty = true;
+    } else if (e.altKey) {
+      const vw = v1 - v0; const d = (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY) / 800 * vw;
+      let a = v0 + d, b = v1 + d;
+      if (a < mn) { b += mn - a; a = mn; } if (b > mx) { a -= b - mx; b = mx; }
+      setView(a, b);
+    }
+  }, { passive: false });
+}
+attachLaneEvents($('topCanvas'), topL);
+$('topFit').onclick = () => { topL.fit = true; topL.view = null; topDirty = true; };
+$('topFit').addEventListener('pointerdown', e => e.stopPropagation());
+$('topCard').addEventListener('pointerdown', () => setActive(topL), true);
+
+/* ================= keyboard ================= */
+document.addEventListener('keydown', e => {
+  if (menuEl && menuEl.classList.contains('dialog')) return;   // no shortcuts while a dialog is open
+  const tag = (e.target.tagName || '').toLowerCase();
+  if (tag === 'input' || tag === 'select' || tag === 'textarea') return;
+  const k = e.key.toLowerCase(), ctrl = e.ctrlKey || e.metaKey;
+  if (e.code === 'Space') { e.preventDefault(); togglePlay(e.shiftKey); return; }
+  if (ctrl && k === 's' && e.shiftKey) { e.preventDefault(); saveSessionManual(); return; }
+  if (activeLane && activeLane.live && ((ctrl && ['s', 'v', 'x'].includes(k)) || k === 'delete' || k === 'backspace')) { e.preventDefault(); toast('録音中の行は、SPLITで確定してから編集できます'); return; }
+  if (ctrl && k === 's') { e.preventDefault(); if (activeLane === topL) { toast('分割はテイクの行で行います（行をクリックしてから）'); return; } if (!opSplit(activeLane, activeLane.cursor)) toast('カーソルの位置では分割できません'); return; }
+  if (ctrl && k === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
+  if (ctrl && k === 'y') { e.preventDefault(); redo(); return; }
+  if (ctrl && k === 'c') { e.preventDefault(); copySel(activeLane); return; }
+  if (ctrl && k === 'x') { e.preventDefault(); cutSel(activeLane); return; }
+  if (ctrl && k === 'v') { e.preventDefault(); paste(activeLane); return; }
+  if (ctrl) return;
+  if (k === 'm') { e.preventDefault(); addMark(rec.on ? M.len : topL.cursor); return; }
+  if (k === 's' && activeLane !== topL) { e.preventDefault(); if (!opSplit(activeLane, activeLane.cursor)) toast('カーソルの位置では分割できません'); return; }
+  if ((k === 'delete' || k === 'backspace') && activeLane !== topL && activeLane.sel) { e.preventDefault(); opDelete(activeLane, Math.min(...activeLane.sel), Math.max(...activeLane.sel)); return; }
+  if (k === 'escape') { closeMenu(); if (activeLane) { activeLane.sel = null; redrawAll(); } }
+});
+function addTakeManual() {
+  if (!M.len) { toast('まだ録音がありません'); return; }
+  const r = selRange(topL); pushUndo();
+  const t = newTake(r ? [[Math.round(r[0]), Math.round(r[1])]] : [], null); t.edited = true;
+  takes.push(t); fitView(t); rebuildTakeDom(); topDirty = true; scheduleAutosave(); setActive(t);
+  t.dom.root.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  toast(r ? '選んだ範囲で新しいテイクを作りました' : '空のテイクを作りました。カーソルを置いてCtrl+Vで貼り付けてください', 3500);
+}
+$('btnAddTake').onclick = addTakeManual;
+function bulkDialog() {
+  if (rec.on) { toast('録音中は使えません'); return; }
+  let saved = ''; try { saved = localStorage.getItem('jm2_bulk') || ''; } catch (e) {}
+  dialog((el, done) => {
+    el.classList.add('wide');
+    const m = document.createElement('div'); m.className = 'dmsg'; m.textContent = '1行に1本ずつ、ファイル名を書いてください（.wavは不要）'; el.appendChild(m);
+    const ta = document.createElement('textarea'); ta.className = 'dta'; ta.value = saved; ta.spellcheck = false; ta.rows = 10; el.appendChild(ta);
+    const keep = () => { try { localStorage.setItem('jm2_bulk', ta.value); } catch (e) {} };
+    ta.addEventListener('input', keep);
+    const del = mkBtn('枠を全部消す', 'danger', async () => {
+      const filled = takes.filter(t => t.segs.length && !t.live).length, empty = takes.filter(t => !t.segs.length).length;
+      if (!filled && !empty) { toast('消す枠がありません'); return; }
+      if (filled) {
+        // ask inside this dialog so the text being edited is kept
+        if (!confirm2.hidden) return; confirm2.hidden = false; confirm2.querySelector('.cmsg').textContent = `波形が入った枠が${filled}本あります。それも消しますか？（録音ファイル自体は消えません）`; return;
+      }
+      pushUndo(); takes = takes.filter(t => t.segs.length || t.live); rebuildTakeDom(); scheduleAutosave(); toast(`空の枠を${empty}本消しました`);
+    });
+    const confirm2 = document.createElement('div'); confirm2.className = 'dconfirm'; confirm2.hidden = true;
+    confirm2.innerHTML = '<div class="cmsg"></div>';
+    confirm2.appendChild(btnRow([mkBtn('全部消す', 'danger', () => { pushUndo(); const n = takes.filter(t => !t.live).length; takes = takes.filter(t => t.live); rebuildTakeDom(); topDirty = true; scheduleAutosave(); confirm2.hidden = true; toast(`枠を${n}本消しました`); }), mkBtn('やめる', '', () => { confirm2.hidden = true; })]));
+    const make = mkBtn('枠を作成', 'primary', () => {
+      keep();
+      const names = ta.value.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
+      if (!names.length) { toast('名前が1行もありません'); return; }
+      pushUndo();
+      names.forEach(n => { const t = newTake([], null); t.edited = true; t.slot = true; t.fileName = safeName(n.replace(/\.wav$/i, '')); takes.push(t); fitView(t); });
+      rebuildTakeDom(); scheduleAutosave(); done(true); toast(`${names.length}本の枠を作りました`);
+    });
+    el.appendChild(btnRow([del, mkBtn('閉じる', '', () => { keep(); done(null); }), make]));
+    el.appendChild(confirm2);
+    setTimeout(() => ta.focus(), 0);
+  }, { noEsc: true });
+}
+$('btnBulk').onclick = bulkDialog;
+$('btnMark').onclick = () => addMark(rec.on ? M.len : topL.cursor);
+
+/* ================= BGM (length variants) ================= */
+const bgm = { list: [], name: '', cache: new Map() };
+async function wavDuration(file) {
+  const head = new DataView(await file.slice(0, Math.min(file.size, 1 << 16)).arrayBuffer());
+  const str = (o, n) => { let s = ''; for (let i = 0; i < n; i++) s += String.fromCharCode(head.getUint8(o + i)); return s; };
+  if (str(0, 4) !== 'RIFF' || str(8, 4) !== 'WAVE') return null;
+  let o = 12, rate = 0, blockAlign = 0;
+  while (o + 8 <= head.byteLength) {
+    const id = str(o, 4), sz = head.getUint32(o + 4, true);
+    if (id === 'fmt ') { rate = head.getUint32(o + 12, true); blockAlign = head.getUint16(o + 20, true); }
+    if (id === 'data') { return rate && blockAlign ? sz / blockAlign / rate : null; }
+    o += 8 + sz + (sz & 1);
+  }
+  return null;
+}
+async function setBgmFiles(files, name) {
+  const list = [];
+  for (const f of files) {
+    if (!/\.(wav|wave|mp3|aif|aiff|flac|m4a)$/i.test(f.name)) continue;
+    let dur = await wavDuration(f).catch(() => null);
+    const rate = sourceRate(await f.slice(0, Math.min(f.size, 1 << 20)).arrayBuffer());
+    if (dur == null) { try { const b = await ctx().decodeAudioData(await f.arrayBuffer()); dur = b.duration; } catch (e) { continue; } }
+    list.push({ name: f.name.replace(/\.[^.]+$/, ''), file: f, dur, rate });
+  }
+  list.sort((a, b) => a.dur - b.dur);
+  bgm.list = list; bgm.name = name; bgm.cache.clear();
+  const rates = [...new Set(list.map(v => v.rate))];
+  bgm.rateText = !list.length ? '' : rates.length === 1 ? (rates[0] === FS ? '48kHz' : fmtRate(rates[0]) + '→48kHz変換') : '混在（48kHz以外は変換）';
+  $('bgmName').textContent = list.length ? `${name}（${list.length}本：${list[0].dur.toFixed(1)}〜${list[list.length - 1].dur.toFixed(1)}秒・${bgm.rateText}）` : (isExe ? '「ジングルオケ」フォルダにオケのファイルを入れてください（入れたらここをクリック）' : '使えるファイルがありません');
+  takes.forEach(updTakeDom);
+}
+if (!isExe) { $('btnBgmDir').hidden = true; $('btnBgmFiles').hidden = true; }
+$('btnBgmDir').onclick = async () => {
+  if (isExe) { const pth = await jmNative.pickFolder(localStorage.getItem('jm_bgmPath') || NI.dirs.oke); if (pth) { try { localStorage.setItem('jm_bgmPath', pth); } catch (e) {} await loadBgmPath(pth); } return; }
+  if (!hasFS) { $('fileBgm').click(); return; }
+  let dir; try { dir = await window.showDirectoryPicker({ id: 'bgmDir', mode: 'read' }); } catch (e) { return; }
+  await IDB.set('bgmDir', dir); await loadBgmDir(dir);
+};
+async function loadBgmDir(dir) { const files = []; for await (const [n, h] of dir.entries()) if (h.kind === 'file') files.push(await h.getFile()); await setBgmFiles(files, dir.name); }
+$('btnBgmFiles').onclick = () => $('fileBgm').click();
+$('fileBgm').onchange = async e => { const fs = [...e.target.files]; e.target.value = ''; if (fs.length) await setBgmFiles(fs, fs.length + '個のファイル'); };
+async function loadBgmPath(pth) {
+  await jmNative.allow(pth);
+  const st = await jmNative.stat(pth); if (!st || !st.dir) { $('bgmName').textContent = 'オケのフォルダが見つかりません：' + pth; return; }
+  await loadBgmDir(new NDir(pth, pth.split(/[\\/]/).filter(Boolean).pop()));
+}
+$('bgmName').onclick = async () => { if (isExe) { await loadBgmPath(localStorage.getItem('jm_bgmPath') || NI.dirs.oke); return; } if (rootDir && await verifyPerm(rootDir, 'readwrite')) await loadBgmDir(await rootDir.getDirectoryHandle('ジングルオケ', { create: true })); };
+
+function planFor(v, narrLen, kAdj) {
+  const beat = 60 / S.bpm, step = beat, g0 = S.t1 + S.delayBeats * beat;   // narration can start on every beat (+ the small delay)
+  const kmin = Math.max(0, Math.ceil((S.introMin - g0) / step - 1e-9));
+  const kmax = Math.floor((v.dur - S.remMin - narrLen - g0) / step + 1e-9);
+  let k0 = kmax >= kmin ? kmax : kmin, relaxed = false;
+  // balance: if the narration would come in right at the head (no intro), come in one beat later
+  // and let the tail be up to one beat shorter than 余り最短 — tight at the head, tight at the tail
+  if (kmax >= kmin && k0 === kmin && v.dur - narrLen - (g0 + (k0 + 1) * step) >= S.remMin - beat - 1e-9) { k0++; relaxed = true; }
+  return { ok: kmax >= kmin, k: Math.max(0, k0 + kAdj), g0, step, relaxed, beat };
+}
+function planMake(t) {
+  if (!bgm.list.length || t.start == null || t.end == null) return null;
+  const narrLen = (t.end - t.start) / FS;
+  let auto = bgm.list.findIndex(v => planFor(v, narrLen, 0).ok);
+  if (auto < 0) auto = bgm.list.length - 1;
+  const vi = clamp(auto + t.vAdj, 0, bgm.list.length - 1);
+  const v = bgm.list[vi]; const pl = planFor(v, narrLen, t.kAdj);
+  const p = pl.g0 + pl.k * pl.step, rem = v.dur - (p + narrLen);
+  let warn = '';
+  if (rem < 0) warn = 'ナレがオケより長くはみ出します';
+  else if (rem < S.remMin - 1e-6 && !(pl.relaxed && !t.kAdj && rem >= S.remMin - pl.beat - 1e-6)) warn = 'ナレ後の余りが短すぎます';
+  else if (rem > S.remMax + 1e-6) warn = 'ナレ後の余りが目安より長めです';
+  if (p < S.introMin - 1e-6) warn = (warn ? warn + '／' : '') + 'イントロが最短より短いです';
+  if (!planFor(bgm.list[bgm.list.length - 1], narrLen, 0).ok && auto === bgm.list.length - 1 && !t.vAdj) warn = (warn ? warn + '／' : '') + 'いちばん長いオケでも足りません';
+  return { v, vi, p, rem, narrLen, warn };
+}
+async function loadVariant(v) {
+  if (bgm.cache.has(v.name)) return bgm.cache.get(v.name);
+  const b = await ctx().decodeAudioData(await v.file.arrayBuffer());
+  const L = b.getChannelData(0).slice(), R = b.numberOfChannels > 1 ? b.getChannelData(1).slice() : L.slice();
+  const o = [L, R]; bgm.cache.clear(); bgm.cache.set(v.name, o); return o;
+}
+
+/* ================= make ================= */
+async function make(t) {
+  if (t.start == null || t.end == null) { toast('先にスタートとエンドを打ってください（カーソル付近で右クリック）'); return; }
+  if (t.live) return;
+  const base = safeName((t.dom.fname.value || '').replace(/\.wav$/i, ''));
+  if (!base || base.includes('○○')) { toast('ファイル名を入れてください', 3000); t.dom.fname.focus(); return; }
+  const fname = base + '.wav';
+  t.fileName = base;
+  const other = takes.find(o => o !== t && o.made && o.made.file === fname);
+  if (other && !await confirmBox(`「${fname}」は${other.name}の完パケと同じ名前です。上書きしますか？`, '上書きする', 'やめる')) return;
+  const ed = (isExe || hasFS) ? await exportDirExe() : null;   // 作業フォルダ\\セッション\\<session>\\ジングル (download only without a folder)
+  if (isExe && !ed) { toast('完パケの保存先を用意できませんでした'); return; }
+  if (!other && !(t.made && t.made.file === fname) && ed && await fileExists(ed, fname)) {
+    if (!await confirmBox(`書き出し先に「${fname}」がもうあります。上書きしますか？`, '上書きする', 'やめる')) return;
+  }
+  const prevFile = t.made ? t.made.file : null;
+  const plan = planMake(t); if (!plan) { toast('オケのフォルダを設定してください（上の「設定」→ オケ）'); const pb = document.querySelector('[data-pop="popSettings"]'); if ($('popSettings').hidden) pb.click(); return; }
+  const btn = t.dom.root.querySelector('.mk'); btn.disabled = true; btn.textContent = '作成中…';
+  try {
+    const narr = renderSegs(sliceSegs(t.segs, t.start, t.end), t.gain);
+    const fi = Math.min(240, narr.length >> 2); for (let i = 0; i < fi; i++) { narr[i] *= i / fi; narr[narr.length - 1 - i] *= i / fi; }
+    const [bl, br] = await loadVariant(plan.v);
+    // heavy mixing / loudness / WAV encoding runs in a background worker so recording and the screen are never held up
+    const res = await callWorker('make', {
+      narr, bl, br, p: plan.p, base: dbToGain(S.bgmBase), FS,
+      P: { preDb: S.preDb, duckDb: S.duckDb, postDb: S.postDb, dnBefore: S.dnBefore, dnAfter: S.dnAfter, upBefore: S.upBefore, upAfter: S.upAfter, padHead: S.padHead, padTail: S.padTail }
+    }, [narr.buffer]);
+    const lk = res.lk, peak = res.peak, dur = res.dur, g = 1;
+    let warn = peak > dbToGain(S.peakCeil) ? 'ピークが上限を超えています（ナレ音量を下げてください）' : '';
+    const blob = new Blob([res.wav], { type: 'audio/wav' });
+    let saved = '';
+    if (ed) { await writeFile(ed, fname, blob); saved = sess.name + '\\ジングル'; }
+    else download(fname, blob);
+    if (t.made && t.made.url) URL.revokeObjectURL(t.made.url);
+    t.made = { file: fname, variant: plan.v.name, lkfs: lk + gainToDb(g), peak: gainToDb(peak * g), dur, url: URL.createObjectURL(blob) };
+    if (t.dom.audio) { t.dom.audio.pause(); t.dom.audio = null; }
+    t.dom.pbtn.textContent = '▶';
+    updTakeDom(t); t.dom.warn.textContent = warn || (plan.warn || '');
+    if (prevFile && prevFile !== fname) t.dom.warn.textContent = (t.dom.warn.textContent ? t.dom.warn.textContent + '／' : '') + `前の「${prevFile}」も残っています`;
+    scheduleAutosave();
+    toast('できました：' + fname + (saved ? '（' + saved + ' に保存）' : '（ダウンロード）'), 3500);
+  } catch (err) { console.error(err); toast('メイクに失敗しました：' + (err && err.message || err), 4000); }
+  btn.disabled = false; btn.textContent = 'Done';
+}
+
+/* ================= background worker ================= */
+const WORKER_SRC = `
+const dbToGain = db => Math.pow(10, db / 20);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+function biquad(x, y, b0, b1, b2, a1, a2) { let x1 = 0, x2 = 0, y1 = 0, y2 = 0; for (let i = 0; i < x.length; i++) { const xi = x[i]; const yi = b0 * xi + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2; x2 = x1; x1 = xi; y2 = y1; y1 = yi; y[i] = yi; } return y; }
+function kweight(x) { const y = biquad(x, new Float32Array(x.length), 1.53512485958697, -2.69169618940638, 1.19839281085285, -1.69065929318241, 0.73248077421585); return biquad(y, y, 1, -2, 1, -1.99004745483398, 0.99007225036621); }
+function lkfs(L, R, FS) {
+  const kl = kweight(L), kr = kweight(R), n = L.length, cs = new Float64Array(n + 1);
+  for (let i = 0; i < n; i++) cs[i + 1] = cs[i] + kl[i] * kl[i] + kr[i] * kr[i];
+  const blk = Math.round(0.4 * FS), hop = Math.round(0.1 * FS), z = [];
+  for (let s = 0; s + blk <= n; s += hop) z.push((cs[s + blk] - cs[s]) / blk);
+  const lk = v => -0.691 + 10 * Math.log10(v);
+  let g = z.filter(v => v > 0 && lk(v) > -70); if (!g.length) return -Infinity;
+  const rel = lk(g.reduce((a, v) => a + v, 0) / g.length) - 10; g = g.filter(v => lk(v) > rel);
+  return lk(g.reduce((a, v) => a + v, 0) / g.length);
+}
+function wav(chs, bits, FS) {
+  const nch = chs.length, n = chs[0].length, bps = bits / 8, buf = new ArrayBuffer(44 + n * nch * bps), v = new DataView(buf);
+  const w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  w(0, 'RIFF'); v.setUint32(4, 36 + n * nch * bps, true); w(8, 'WAVE'); w(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, nch, true);
+  v.setUint32(24, FS, true); v.setUint32(28, FS * nch * bps, true); v.setUint16(32, nch * bps, true); v.setUint16(34, bits, true); w(36, 'data'); v.setUint32(40, n * nch * bps, true);
+  if (bits === 16) { const out = new Int16Array(buf, 44, n * nch); let o = 0;
+    for (let i = 0; i < n; i++) for (let c = 0; c < nch; c++) { const x = chs[c][i]; let s = x === 0 ? 0 : Math.round(x * 32767 + Math.random() - Math.random()); out[o++] = s > 32767 ? 32767 : s < -32768 ? -32768 : s; } }
+  else { const u = new Uint8Array(buf, 44); let o = 0;
+    for (let i = 0; i < n; i++) for (let c = 0; c < nch; c++) { let x = chs[c][i]; x = x > 1 ? 1 : x < -1 ? -1 : x; let s = Math.round(x * 8388607); if (s < 0) s += 16777216; u[o++] = s & 255; u[o++] = (s >> 8) & 255; u[o++] = (s >> 16) & 255; } }
+  return buf;
+}
+function make(d) {
+  const { narr, bl, br, p, base, FS, P } = d;
+  const pS = Math.round(p * FS), len = Math.max(bl.length, pS + narr.length);
+  const L = new Float32Array(len), R = new Float32Array(len);
+  const Ns = p, Ne = p + narr.length / FS;
+  const a1 = Ns - P.dnBefore, a2 = Ns + P.dnAfter, b1 = Ne - P.upBefore, b2 = Ne + P.upAfter;
+  const cs = (f, to, u) => f + (to - f) * (0.5 - 0.5 * Math.cos(Math.PI * clamp(u, 0, 1)));
+  const envDb = tt => { const down = cs(P.preDb, P.duckDb, (tt - a1) / Math.max(0.001, a2 - a1)); if (tt <= b1) return down; const atB1 = cs(P.preDb, P.duckDb, (b1 - a1) / Math.max(0.001, a2 - a1)); return cs(atB1, P.postDb, (tt - b1) / Math.max(0.001, b2 - b1)); };
+  let gPrev = dbToGain(envDb(0)) * base;
+  for (let i = 0; i < bl.length; i += 64) { const gNext = dbToGain(envDb((i + 64) / FS)) * base, e = Math.min(bl.length, i + 64); for (let j = i; j < e; j++) { const g = gPrev + (gNext - gPrev) * (j - i) / 64; L[j] = bl[j] * g; R[j] = br[j] * g; } gPrev = gNext; }
+  for (let i = 0; i < narr.length; i++) { L[pS + i] += narr[i]; R[pS + i] += narr[i]; }
+  let peak = 0; for (let i = 0; i < len; i++) { const a = Math.abs(L[i]), b = Math.abs(R[i]); if (a > peak) peak = a; if (b > peak) peak = b; }
+  const lk = lkfs(L, R, FS);
+  const hp = Math.round(P.padHead * FS), tp = Math.round(P.padTail * FS);
+  let OL = L, OR = R;
+  if (hp || tp) { OL = new Float32Array(hp + len + tp); OR = new Float32Array(hp + len + tp); OL.set(L, hp); OR.set(R, hp); }
+  return { wav: wav([OL, OR], 16, FS), lk, peak, dur: OL.length / FS };
+}
+onmessage = e => {
+  const { id, type, d } = e.data;
+  try {
+    if (type === 'make') { const r = make(d); postMessage({ id, r }, [r.wav]); }
+    else if (type === 'wav') { const b = wav(d.chs, d.bits, d.FS); postMessage({ id, r: b }, [b]); }
+  } catch (err) { postMessage({ id, err: String(err && err.message || err) }); }
+};`;
+let worker = null, workerSeq = 0; const workerCalls = new Map();
+function getWorker() {
+  if (worker) return worker;
+  try { worker = new Worker(URL.createObjectURL(new Blob([WORKER_SRC], { type: 'application/javascript' }))); }
+  catch (e) { worker = new Worker('data:application/javascript;base64,' + btoa(unescape(encodeURIComponent(WORKER_SRC)))); }
+  worker.onmessage = e => { const c = workerCalls.get(e.data.id); if (!c) return; workerCalls.delete(e.data.id); e.data.err ? c.rej(new Error(e.data.err)) : c.res(e.data.r); };
+  worker.onerror = e => { workerCalls.forEach(c => c.rej(new Error('worker error'))); workerCalls.clear(); worker = null; };
+  return worker;
+}
+function callWorker(type, d, transfer) { return new Promise((res, rej) => { const id = ++workerSeq; workerCalls.set(id, { res, rej }); getWorker().postMessage({ id, type, d }, transfer || []); }); }
+async function wavBlob(chs, bits) {
+  // hand over private copies instead of cloning them (halves memory for long recordings); never the master buffer
+  const tr = chs.filter(c => c.buffer !== M.buf.buffer && c.byteOffset === 0 && c.byteLength === c.buffer.byteLength).map(c => c.buffer);
+  const buf = await callWorker('wav', { chs, bits, FS }, [...new Set(tr)]); return new Blob([buf], { type: 'audio/wav' });
+}
+
+/* made-file player (pitch preserved) */
+const mediaNodes = new WeakMap();
+function playersActive() { return takes.some(t => t.dom && t.dom.audio && !t.dom.audio.paused); }
+function stopPlayers() { takes.forEach(t => { if (t.dom && t.dom.audio && !t.dom.audio.paused) { t.dom.audio.pause(); t.dom.pbtn.textContent = '▶'; } }); }
+function ensureAudio(t) {
+  if (!t.made || !t.made.url) return null;
+  let a = t.dom.audio;
+  if (!a) {
+    a = new Audio(t.made.url); a.preservesPitch = true; a.playbackRate = t.speed || 1; t.dom.audio = a;
+    const c = ctx(); const n = c.createMediaElementSource(a); n.connect(outBus); mediaNodes.set(a, n);
+    a.addEventListener('timeupdate', () => updSeek(t));
+    a.addEventListener('loadedmetadata', () => updSeek(t));
+    a.addEventListener('ended', () => { t.dom.pbtn.textContent = '▶'; updSeek(t); });
+  }
+  return a;
+}
+function togglePlayer(t) {
+  const a = ensureAudio(t);
+  if (!a) { toast('もう一度Doneすると再生できます'); return; }
+  if (a.paused) { Player.stop(); stopPlayers(); ctx().resume(); if (a.ended) a.currentTime = 0; a.playbackRate = t.speed || 1; a.play(); t.dom.pbtn.textContent = '■'; }
+  else { a.pause(); t.dom.pbtn.textContent = '▶'; }
+}
+
+/* ================= DSP helpers ================= */
+function biquad(x, y, b0, b1, b2, a1, a2) { let x1 = 0, x2 = 0, y1 = 0, y2 = 0; for (let i = 0; i < x.length; i++) { const xi = x[i]; const yi = b0 * xi + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2; x2 = x1; x1 = xi; y2 = y1; y1 = yi; y[i] = yi; } return y; }
+function kweight(x) { const y = biquad(x, new Float32Array(x.length), 1.53512485958697, -2.69169618940638, 1.19839281085285, -1.69065929318241, 0.73248077421585); return biquad(y, y, 1, -2, 1, -1.99004745483398, 0.99007225036621); }
+function lkfs(L, R) {
+  const kl = kweight(L), kr = kweight(R), n = L.length, cs = new Float64Array(n + 1);
+  for (let i = 0; i < n; i++) cs[i + 1] = cs[i] + kl[i] * kl[i] + kr[i] * kr[i];
+  const blk = Math.round(0.4 * FS), hop = Math.round(0.1 * FS), z = [];
+  for (let s = 0; s + blk <= n; s += hop) z.push((cs[s + blk] - cs[s]) / blk);
+  const lk = v => -0.691 + 10 * Math.log10(v);
+  let g = z.filter(v => v > 0 && lk(v) > -70); if (!g.length) return -Infinity;
+  const rel = lk(g.reduce((a, v) => a + v, 0) / g.length) - 10; g = g.filter(v => lk(v) > rel);
+  return lk(g.reduce((a, v) => a + v, 0) / g.length);
+}
+function encodeWav(chs, bits) {
+  const nch = chs.length, n = chs[0].length, bps = bits / 8, buf = new ArrayBuffer(44 + n * nch * bps), v = new DataView(buf);
+  const w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  w(0, 'RIFF'); v.setUint32(4, 36 + n * nch * bps, true); w(8, 'WAVE'); w(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, nch, true);
+  v.setUint32(24, FS, true); v.setUint32(28, FS * nch * bps, true); v.setUint16(32, nch * bps, true); v.setUint16(34, bits, true); w(36, 'data'); v.setUint32(40, n * nch * bps, true);
+  if (bits === 16) {
+    const out = new Int16Array(buf, 44, n * nch); let o = 0;
+    for (let i = 0; i < n; i++) for (let c = 0; c < nch; c++) { const x = chs[c][i]; let s = x === 0 ? 0 : Math.round(x * 32767 + Math.random() - Math.random()); out[o++] = s > 32767 ? 32767 : s < -32768 ? -32768 : s; }
+  } else {
+    const u = new Uint8Array(buf, 44); let o = 0;
+    for (let i = 0; i < n; i++) for (let c = 0; c < nch; c++) { let x = chs[c][i]; x = x > 1 ? 1 : x < -1 ? -1 : x; let s = Math.round(x * 8388607); if (s < 0) s += 16777216; u[o++] = s & 255; u[o++] = (s >> 8) & 255; u[o++] = (s >> 16) & 255; }
+  }
+  return new Blob([buf], { type: 'audio/wav' });
+}
+function dialog(build, opt) {
+  return new Promise(res => {
+    closeMenu();
+    const back = document.createElement('div'); back.className = 'modalBack';
+    menuEl = document.createElement('div'); menuEl.className = 'menu dialog'; menuEl.setAttribute('role', 'dialog');
+    const done = v => { back.remove(); closeMenu(); document.removeEventListener('keydown', onKey, true); res(v); };
+    const onKey = e => { if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); if (!(opt && opt.noEsc)) done(null); } };
+    document.addEventListener('keydown', onKey, true);
+    build(menuEl, done); back.appendChild(menuEl); document.body.appendChild(back);
+    menuEl._back = back;
+    const f = menuEl.querySelector('input,button.primary,button'); if (f) f.focus();
+  });
+}
+function btnRow(items) { const row = document.createElement('div'); row.className = 'drow'; items.forEach(b => row.appendChild(b)); return row; }
+function mkBtn(label, cls, fn) { const b = document.createElement('button'); b.textContent = label; if (cls) b.className = cls; b.onclick = fn; return b; }
+function confirmBox(msg, okLabel = 'OK', ngLabel = 'やめる') {
+  return dialog((el, done) => {
+    const m = document.createElement('div'); m.className = 'dmsg'; m.textContent = msg; el.appendChild(m);
+    el.appendChild(btnRow([mkBtn(okLabel, 'primary', () => done(true)), mkBtn(ngLabel, '', () => done(false))]));
+  }).then(v => !!v);
+}
+function promptBox(msg, def) {
+  return dialog((el, done) => {
+    const m = document.createElement('div'); m.className = 'dmsg'; m.textContent = msg; el.appendChild(m);
+    const inp = document.createElement('input'); inp.type = 'text'; inp.value = def || ''; inp.className = 'dinput';
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); done(inp.value.trim() || null); } });
+    el.appendChild(inp);
+    el.appendChild(btnRow([mkBtn('保存', 'primary', () => done(inp.value.trim() || null)), mkBtn('やめる', '', () => done(null))]));
+    setTimeout(() => { inp.focus(); inp.select(); }, 0);
+  });
+}
+function chooseBox(msg, items) {
+  return dialog((el, done) => {
+    const m = document.createElement('div'); m.className = 'dmsg'; m.textContent = msg; el.appendChild(m);
+    items.forEach(([label, sub, val]) => { const b = mkBtn('', 'dchoice', () => done(val)); b.innerHTML = `<span></span><span class="kbd"></span>`; b.children[0].textContent = label; b.children[1].textContent = sub; el.appendChild(b); });
+    el.appendChild(btnRow([mkBtn('やめる', '', () => done(null))]));
+  });
+}
+function renderStatus() {
+  // every line is always there (with — when empty) and never wraps, so the header keeps the same height
+  const sw = t => t.includes('変換') ? `<span class="warn" title="${t}">${t}</span>` : `<span title="${t}">${t}</span>`;
+  $('statusBar').innerHTML = (isExe ? `<span title="保存先 ${NI ? NI.root : ''}">保存先 <b>${NI ? NI.root : ''}</b></span>` : `<span title="作業フォルダ ${rootDir ? rootDir.name : ''}">作業フォルダ <b>${rootDir ? rootDir.name : '未設定'}</b></span>`) + `<span>オケ <b>${bgm.list.length ? bgm.name + '（' + bgm.rateText + '）' : '未設定'}</b></span>` + sw(mic.stream && srcInfo.input ? srcInfo.input : '入力 —') + sw(srcInfo.load || '読込 —') + (hasFS ? '' : '<span class="warn">このブラウザではフォルダ保存が使えません（Chromeで開いてください）</span>');
+}
+setInterval(renderStatus, 1000); renderStatus();
+/* display size: the exe uses the app's own zoom; the browser version uses CSS zoom */
+function applyZoom(z) {
+  z = +z || 1; S.uiZoom = z; saveSettings(); $('selZoom').value = String(z);
+  if (isExe && jmNative.setZoom) { jmNative.setZoom(z); document.documentElement.style.zoom = ''; document.documentElement.style.setProperty('--z', 1); }
+  else { document.documentElement.style.zoom = z; document.documentElement.style.setProperty('--z', z); }
+  setTimeout(redrawAll, 50);
+}
+$('selZoom').onchange = () => applyZoom($('selZoom').value);
+/* drag & drop an audio file onto the recording lane = 音声読込 */
+(() => {
+  const card = $('topCard'), ov = $('dropOv'); let depth = 0;
+  const hasFiles = e => e.dataTransfer && [...(e.dataTransfer.types || [])].includes('Files');
+  const show = on => { ov.hidden = !on; ov.classList.toggle('ng', rec.on); $('dropTxt').textContent = rec.on ? '録音中は読み込めません' : 'ここに離すと読み込みます'; };
+  card.addEventListener('dragenter', e => { if (!hasFiles(e)) return; e.preventDefault(); depth++; show(true); });
+  card.addEventListener('dragover', e => { if (!hasFiles(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = rec.on ? 'none' : 'copy'; });
+  card.addEventListener('dragleave', e => { if (!hasFiles(e)) return; depth = Math.max(0, depth - 1); if (!depth) show(false); });
+  card.addEventListener('drop', async e => {
+    if (!hasFiles(e)) return; e.preventDefault(); depth = 0; show(false);
+    if (rec.on) { toast('録音中は読み込めません'); return; }
+    const files = [...e.dataTransfer.files]; if (!files.length) return;
+    if (files.length > 1) toast('1つずつ読み込んでください（最初の1つを読み込みます）', 3500);
+    if (!await askSaveBeforeNew('音声を読み込むと、新しいセッションになります。')) return;
+    await $('fileWav').onchange({ target: { files: [files[0]], value: '' } });
+  });
+  // a file dropped anywhere else must not make the window open it (that would leave the app)
+  window.addEventListener('dragover', e => { if (hasFiles(e)) e.preventDefault(); });
+  window.addEventListener('drop', e => { if (hasFiles(e)) e.preventDefault(); });
+})();
+updRecUI();
+/* header pop-outs: ナレの入り / オケの音量 / 設定 open on click, close on a second click, outside click or Esc */
+function closePops(except) { document.querySelectorAll('.pop').forEach(p => { if (p !== except && !p.hidden) { p.hidden = true; const b = document.querySelector(`[data-pop="${p.id}"]`); if (b) b.classList.remove('open'); } }); }
+document.querySelectorAll('.ptb').forEach(b => b.addEventListener('click', () => {
+  const p = $(b.dataset.pop); const open = p.hidden; closePops(p);
+  p.hidden = !open; b.classList.toggle('open', open);
+  if (open) {   // keep it on screen
+    p.style.left = '0px'; p.style.top = ''; const z = parseFloat(getComputedStyle(document.documentElement).zoom) || 1;
+    if (p.classList.contains('wide')) {   // the big one opens below the header so SPLIT / VU / 録音 stay uncovered
+      const hb = document.querySelector('header').getBoundingClientRect().bottom, tb = b.parentElement.getBoundingClientRect().top;
+      p.style.top = ((hb - tb) / z + 6) + 'px';
+    }
+    const r = p.getBoundingClientRect();
+    const over = r.right - (window.innerWidth - 12); if (over > 0) p.style.left = -(over / z) + 'px';
+  }
+}));
+document.addEventListener('pointerdown', e => { if (!e.target.closest('.ptog') && !e.target.closest('.menu') && !e.target.closest('.modalBack')) closePops(null); }, true);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closePops(null); }, true);
+applyZoom(S.uiZoom || 0.9);
+if (isExe) (async () => {
+  NI = await jmNative.info();
+  workDir = new NDir(NI.dirs.sessions, 'セッション');
+  listDevices(); try { navigator.mediaDevices.addEventListener('devicechange', listDevices); } catch (e) {}
+  document.title = 'JingleMaker ' + NI.version;
+  const v = document.createElement('span'); v.className = 'sub'; v.textContent = 'v' + NI.version; v.style.marginLeft = '6px';
+  document.querySelector('.brand h1').appendChild(v);
+  // fixed folders: show where things go instead of folder pickers
+  $('workDirName').textContent = NI.dirs.sessions; $('btnWorkDir').textContent = 'フォルダを開く'; $('btnWorkDir').onclick = () => jmNative.openFolder(NI.root);
+  await loadBgmPath(localStorage.getItem('jm_bgmPath') || NI.dirs.oke);
+  await recoverRecording();
+})();
+/* a recording that was cut off (app/browser closed or crashed while recording) */
+async function recoverRecording() {
+  if (!workDir) return false;
+  const ds = []; for await (const [n, h] of workDir.entries()) if (h.kind === 'directory') ds.push(h);
+  ds.sort((a, b) => b.name.localeCompare(a.name));
+  for (const d of ds) {
+    let marked = false; try { await d.getFileHandle('_録音中.txt'); marked = true; } catch (e) {}
+    if (!marked) continue;
+    if (await confirmBox(`前回の録音（${d.name}）が途中で終わっています。前回の続きを開きますか？`, '開く', '開かない')) await openSession(d, true);
+    else { try { await d.removeEntry('_録音中.txt'); } catch (e) {} }
+    return true;
+  }
+  return false;
+}
+/* HTML: the session that was open when the tab was closed or reloaded */
+async function resumeCheck() {
+  if (await recoverRecording()) return;
+  let o = null; try { o = JSON.parse(localStorage.getItem('jm_open') || 'null'); } catch (e) {}
+  if (!o || !o.name || !workDir) return;
+  let d = null; try { d = await workDir.getDirectoryHandle(o.name); } catch (e) {}
+  if (!d) { try { localStorage.removeItem('jm_open'); } catch (e) {} return; }
+  if (await confirmBox(`前回のセッション（${o.name}）が途中で終わっています。前回の続きを開きますか？`, '開く', '開かない')) await openSession(d, true);
+  else { try { localStorage.removeItem('jm_open'); } catch (e) {} }
+}
+/* HTML: only one tab at a time (two tabs would overwrite each other's auto-save) */
+const TAB_ID = Math.random().toString(36).slice(2);
+let tabBeat = 0;
+function tabOwner() { try { return JSON.parse(localStorage.getItem('jm_tab') || 'null'); } catch (e) { return null; } }
+function claimTab() {
+  const beat = () => {
+    const o = tabOwner();
+    if (o && o.id !== TAB_ID && Date.now() - o.t < 65000) { clearInterval(tabBeat); blockTab(); return; }   // another tab took over
+    try { localStorage.setItem('jm_tab', JSON.stringify({ id: TAB_ID, t: Date.now() })); } catch (e) {}
+  };
+  try { localStorage.setItem('jm_tab', JSON.stringify({ id: TAB_ID, t: Date.now() })); } catch (e) {}
+  clearInterval(tabBeat); tabBeat = setInterval(beat, 1000);
+}
+function blockTab() {
+  return new Promise(res => {
+    if (document.getElementById('tabBlock')) return;
+    const back = document.createElement('div'); back.className = 'modalBack'; back.id = 'tabBlock'; back.style.zIndex = 200;
+    const d = document.createElement('div'); d.className = 'menu dialog';
+    d.innerHTML = '<div class="dmsg"><b>すでに別のタブで開いています</b><br>ジングルメーカーは、ほかのタブ（またはウィンドウ）で開いています。そちらを使って、このタブは閉じてください。</div><div class="drow"><button data-a="take">こちらで使う</button></div>';
+    back.appendChild(d); document.body.appendChild(back);
+    d.querySelector('button').onclick = () => { back.remove(); claimTab(); res(); location.reload(); };
+  });
+}
+window.addEventListener('pagehide', () => { if (isExe) return; const o = tabOwner(); if (o && o.id === TAB_ID) try { localStorage.removeItem('jm_tab'); } catch (e) {} });
+if (!isExe) { const v = document.createElement('span'); v.className = 'sub'; v.textContent = 'v' + APP_VER; v.style.marginLeft = '6px'; document.querySelector('.brand h1').appendChild(v); }
+if (!isExe) (async () => {
+  const o = tabOwner();
+  if (o && o.id !== TAB_ID && Date.now() - o.t < 65000) { await blockTab(); return; }
+  claimTab();
+  if (!hasFS) return;
+  if (await chooseRoot()) await resumeCheck();
+})();
+updSessName();
+</script>
+</body>
+</html>

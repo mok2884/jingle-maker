@@ -1,0 +1,48 @@
+{
+  "name": "jinglemaker",
+  "productName": "JingleMaker",
+  "version": "1.4.2",
+  "description": "Jingle maker",
+  "author": "JingleMaker",
+  "license": "UNLICENSED",
+  "main": "main.js",
+  "build": {
+    "appId": "local.jinglemaker",
+    "productName": "JingleMaker",
+    "files": [
+      "main.js",
+      "preload.js",
+      "app/**",
+      "icon.png"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "icon.ico",
+      "signAndEditExecutable": false
+    },
+    "portable": {
+      "artifactName": "JingleMaker.exe",
+      "unpackDirName": "JingleMaker"
+    },
+    "linux": {
+      "target": [
+        "dir"
+      ]
+    }
+  },
+  "devDependencies": {
+    "electron": "^38.8.6",
+    "electron-builder": "^26.18.0",
+    "playwright-core": "^1.65.0"
+  }
+}
