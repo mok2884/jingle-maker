@@ -376,7 +376,7 @@ const DEF = {
   inCh: '0', peakThr: -1, inId: '', outId: '',
   bpm: 120, t1: 0, bgmBase: 0,
   delayBeats: 0.25, introMin: 0, remMin: 3.2, remMax: 5.0,
-  preDb: -1, duckDb: -7, postDb: -1.5, dnBefore: 0.3, dnAfter: 0.4, upBefore: 0.6, upAfter: 0.6,
+  preDb: -0.5, duckDb: -6.5, postDb: -1.0, dnBefore: 0.3, dnAfter: 0.4, upBefore: 0.6, upAfter: 0.6,
   fnTemplate: '', narTarget: -23.5, peakCeil: -1, padHead: 0, padTail: 0, uiZoom: 0.9, endPad: 0, startPad: 0.03, startGap: 2.0, editZoom: 4, dblZoom: 1
 };
 let S = Object.assign({}, DEF);
@@ -385,12 +385,13 @@ S.fnTemplate = '';
 if (S.narTarget == null) S.narTarget = -24.5;
 S.normMode = 'none';
 if (!(S.ver >= 3)) {   // v3 house defaults
-  Object.assign(S, { bpm: 120, delayBeats: 0.25, introMin: 0, remMin: 3.2, remMax: 5.0, preDb: -1, duckDb: -7, postDb: -1.5, dnBefore: 0.3, dnAfter: 0.4, upBefore: 0.6, upAfter: 0.6, narTarget: -23.5, bgmBase: 0, ver: 3 });
+  Object.assign(S, { bpm: 120, delayBeats: 0.25, introMin: 0, remMin: 3.2, remMax: 5.0, preDb: -0.5, duckDb: -6.5, postDb: -1.0, dnBefore: 0.3, dnAfter: 0.4, upBefore: 0.6, upAfter: 0.6, narTarget: -23.5, bgmBase: 0, ver: 3 });
   try { localStorage.setItem('jm2_settings', JSON.stringify(S)); } catch (e) {}
 }
 if (!(S.ver >= 4)) { S.endPad = 0; S.ver = Math.max(S.ver || 0, 4); try { localStorage.setItem('jm2_settings', JSON.stringify(S)); } catch (e) {} }   // v4: END right at the last word
 if (!(S.ver >= 5)) { S.startPad = 0.05; S.startGap = 2.0; S.ver = Math.max(S.ver || 0, 5); try { localStorage.setItem('jm2_settings', JSON.stringify(S)); } catch (e) {} }   // v5: 編集なし start rule
 if (!(S.ver >= 6)) { S.startPad = 0.03; S.ver = Math.max(S.ver || 0, 6); try { localStorage.setItem('jm2_settings', JSON.stringify(S)); } catch (e) {} }   // v6: START exactly 30 ms before the voice
+if (!(S.ver >= 7)) { S.preDb = -0.5; S.duckDb = -6.5; S.postDb = -1.0; S.ver = Math.max(S.ver || 0, 7); try { localStorage.setItem('jm2_settings', JSON.stringify(S)); } catch (e) {} }   // v7: オケ 前 −0.5 ／ 中 −6.5 ／ 後 −1.0 dB for everyone, once
 if (!(S.ver >= 2)) { S.bgmBase = 0; S.introMin = 1.0; S.remMin = 1.0; S.remMax = 4.0; S.ver = 2; try { localStorage.setItem('jm2_settings', JSON.stringify(S)); } catch (e) {} }
 function saveSettings() { try { localStorage.setItem('jm2_settings', JSON.stringify(S)); } catch (e) {} scheduleAutosave(); }
 document.querySelectorAll('[data-k]').forEach(el => {
@@ -632,7 +633,7 @@ async function openDirectCapture() {
   } catch (e) { console.warn('direct capture unavailable', e); return false; }
 }
 /* the input device itself skipped audio (driver/USB). Warn so the take can be checked. */
-const APP_VER = '1.4.5';
+const APP_VER = '1.4.6';
 /* lost input: Windows/Chrome hand audio over in 10 ms blocks, so a real loss is 10 ms or more.
    A shorter step is Chrome re-timing its clock (no audio missing): it is only written to the log. */
 const GAP_MIN_MS = 8;
@@ -958,7 +959,7 @@ async function openSession(presetDir, preferAuto) {
     marks = js.marks || []; markSeq = js.markSeq || (marks.length + 1); takeSeq = js.takeSeq || 1;
     takes = (js.takes || []).map(t => Object.assign(newTake(t.segs, t.linked, t.name, t.id), { start: t.start, end: t.end, gain: t.gain || 0, edited: !!t.edited, kAdj: t.kAdj || 0, vAdj: t.vAdj || 0, made: t.made || null, fileName: t.fileName, leveled: !!t.leveled, autoLv: !!t.autoLv, flags: t.flags || [], slot: !!t.slot }));
     takes.forEach(t => { if (t.made) t.made.url = null; fitView(t); });
-    if (js.settings) { Object.assign(S, js.settings); refreshSettingFields(); }
+    if (js.settings) { Object.assign(S, js.settings); if (!(S.ver >= 7)) { S.preDb = -0.5; S.duckDb = -6.5; S.postDb = -1.0; S.ver = 7; } refreshSettingFields(); }   // older sessions: same v7 オケ levels
     sess.dir = dir; sess.name = dir.name; sess.created = js.created || ''; sess.recs = recs;
     sess.lastSave = pick === AUTOSAVE ? '' : pick.replace(/\.json$/i, '');
     updSessName(); rebuildTakeDom(); topDirty = true; toast('開きました：' + dir.name + ' ／ ' + pick);
