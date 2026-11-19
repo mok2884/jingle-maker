@@ -633,7 +633,7 @@ async function openDirectCapture() {
   } catch (e) { console.warn('direct capture unavailable', e); return false; }
 }
 /* the input device itself skipped audio (driver/USB). Warn so the take can be checked. */
-const APP_VER = '1.4.6';
+const APP_VER = '1.4.7';
 /* lost input: Windows/Chrome hand audio over in 10 ms blocks, so a real loss is 10 ms or more.
    A shorter step is Chrome re-timing its clock (no audio missing): it is only written to the log. */
 const GAP_MIN_MS = 8;
@@ -2479,6 +2479,9 @@ function applyZoom(z) {
   setTimeout(redrawAll, 50);
 }
 $('selZoom').onchange = () => applyZoom($('selZoom').value);
+// Ctrl+wheel anywhere in the app must not zoom the whole page (on a waveform it zooms the waveform; elsewhere it does nothing).
+// The browser's own zoom stays available from its menu and Ctrl+−/＋/0. (window listeners are passive by default, hence passive:false)
+window.addEventListener('wheel', e => { if (e.ctrlKey || e.metaKey) e.preventDefault(); }, { passive: false });
 /* drag & drop an audio file onto the recording lane = 音声読込 */
 (() => {
   const card = $('topCard'), ov = $('dropOv'); let depth = 0;
