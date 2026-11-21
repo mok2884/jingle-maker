@@ -644,7 +644,7 @@ async function openDirectCapture() {
   } catch (e) { console.warn('direct capture unavailable', e); return false; }
 }
 /* the input device itself skipped audio (driver/USB). Warn so the take can be checked. */
-const APP_VER = '1.4.9';
+const APP_VER = '1.4.10';
 /* lost input: Windows/Chrome hand audio over in 10 ms blocks, so a real loss is 10 ms or more.
    A shorter step is Chrome re-timing its clock (no audio missing): it is only written to the log. */
 const GAP_MIN_MS = 8;
@@ -1556,8 +1556,11 @@ function copySel(lane) {
 function paste(lane) {
   if (!clip) return toast('先にコピーしてください');
   if (lane === topL) return toast('貼り付けはテイクの行で行います');
-  opInsert(lane, lane.cursor, clip, !!(lane.sel && Math.abs(lane.sel[1] - lane.sel[0]) > 10));
+  const rep = !!(lane.sel && Math.abs(lane.sel[1] - lane.sel[0]) > 10);
+  opInsert(lane, lane.cursor, clip, rep);
+  if (rep && lane.sel) cursorBefore(lane, Math.min(lane.sel[0], lane.sel[1]));   // 差し替え：入れた音の頭の 2 秒前
 }
+function cursorBefore(t, p) { t.cursor = Math.max(0, Math.round(p - 2 * FS)); t.cursorMoved = true; t.dirty = true; }   // つなぎ目をすぐ聞けるように（鳴らしはしない）
 
 /* render take audio (with short crossfades at non-contiguous joins) */
 function renderSegs(segs, gainDb) {
@@ -2132,7 +2135,7 @@ function attachLaneEvents(cv, lane) {
       ];
       if (fromFrame) items.pop();   // 枠から出したメニューに「差し替え候補」は出さない（差し替えのボタンに見えるため）
       const tr = cg && Math.abs(r[0] - Math.round(cg.r[0])) <= 1 && Math.abs(r[1] - Math.round(cg.r[1])) <= 1 ? tsumeRange(lane, cg.r) : null;
-      if (tr) items.push([MI_T, '', () => { opDelete(lane, tr[0], tr[1]); toast('詰めました（' + fmtS(tr[1] - tr[0]) + '）'); },
+      if (tr) items.push([MI_T, '', () => { opDelete(lane, tr[0], tr[1]); cursorBefore(lane, tr[0]); toast('詰めました（' + fmtS(tr[1] - tr[0]) + '）'); },
         on => { cutPrev = on ? { lane, a: tr[0], b: tr[1] } : null; lane.dirty = true; }]);
       const bi = boundariesIn(lane, r[0], r[1]);
       if (bi.n) items.splice(1, 0, ['結合（分割線を消す）', '', () => opJoin(lane, r[0], r[1])]);
