@@ -633,7 +633,7 @@ async function openDirectCapture() {
   } catch (e) { console.warn('direct capture unavailable', e); return false; }
 }
 /* the input device itself skipped audio (driver/USB). Warn so the take can be checked. */
-const APP_VER = '1.4.7';
+const APP_VER = '1.4.8';
 /* lost input: Windows/Chrome hand audio over in 10 ms blocks, so a real loss is 10 ms or more.
    A shorter step is Chrome re-timing its clock (no audio missing): it is only written to the log. */
 const GAP_MIN_MS = 8;
@@ -1066,8 +1066,8 @@ function addMark(pos) {
   if (rec.on && lt && pos > lt.segs[0][0] + FS * 0.2) {   // SPLIT while recording
     const m = { id: markSeq++, pos }; marks.push(m);
     finalizeLive(lt, pos, m.id); fitAmp(lt); autoEnd(lt); autoLevel(lt);
-    startLiveTake(pos, m.id);
-    rebuildTakeDom(); topDirty = true; scheduleAutosave(); return;
+    const nt = startLiveTake(pos, m.id);
+    refreshTakeRows([lt, nt]); topDirty = true; scheduleAutosave(); return;
   }
   if (rec.on && lt) { toast('ここでは区切れません'); return; }
   pushUndo();
@@ -1080,7 +1080,7 @@ function addMark(pos) {
   if (t) { t.segs = segs; t.linked = linked; t.edited = false; t.start = t.end = null; t.flags = []; t.cursor = 0; t.cache = null; t.slot = true; t.gain = 0; t.leveled = false; t.autoLv = true; t.kAdj = t.vAdj = 0; }
   else { t = newTake(segs, linked); takes.push(t); }
   fitView(t); fitAmp(t); autoEnd(t); autoLevel(t);
-  rebuildTakeDom(); topDirty = true; scheduleAutosave();
+  refreshTakeRows([t]); topDirty = true; scheduleAutosave();
 }
 function moveMark(m, pos) {
   m.pos = Math.round(clamp(pos, 1, M.len));
@@ -1358,9 +1358,11 @@ function afterEdit(t) { resetIfLenChanged(t); autoLevel(t); t.cache = null; t.di
    Log-mel features (16 kHz, 25 ms window, 10 ms hop, 40 bands) of the selection are compared with the whole
    recording by subsequence DTW (steps (1,1),(2,1),(1,2): the speed may differ a bit). Takes with START and END
    are only searched between them; the selection itself is skipped. Runs only when asked (right-click). */
-let cands = null;
+let cands = null;   // [録音の位置 a, b, 候補の番号]（1つの候補が、テイクの切れ目で何個かに分かれることがある）
+let candQ = null;   // テイクで探したとき：{ lane, m: 選んだ範囲の左端（録音の位置） } →「ここから詰める」の終わり
+let cutPrev = null; //「ここから詰める」にポインタがある間だけ：{ lane, a, b }（テイクの位置）
 const CF = { hop: 480, win: 400, nfft: 512, nb: 40, cache: null };
-function clearCands() { cands = null; const b = document.getElementById('btnCandClr'); if (b) b.hidden = true; if (typeof redrawAll === 'function') redrawAll(); }
+function clearCands() { cands = null; candQ = null; const b = document.getElementById('btnCandClr'); if (b) b.hidden = true; if (typeof redrawAll === 'function') redrawAll(); }
 function drawCands(g, h, toPx) {
   if (!cands) return;
   cands.forEach(([a, b]) => toPx(a, b).forEach(([x0, x1]) => {
@@ -1368,6 +1370,36 @@ function drawCands(g, h, toPx) {
     g.fillStyle = 'rgba(167,121,255,.30)'; g.fillRect(x0, 0, Math.max(2, x1 - x0), h);
     g.fillStyle = '#B48CFF'; g.fillRect(x0, 0, Math.max(2, x1 - x0), 3);
   }));
+}
+function snapQuiet(p, lim, qm) {   // p の前後 0.1 秒（lim の中、選んだ範囲にはかからない）で、5ms の音がいちばん小さい所
+  const W = Math.round(0.1 * FS), win = 240, hw = win >> 1;
+  let lo = Math.max(lim[0], p - W), hi = Math.min(lim[1], p + W);
+  for (const q of qm) { if (q[1] <= p) lo = Math.max(lo, q[1]); else if (q[0] >= p) hi = Math.min(hi, q[0]); }
+  lo = Math.max(0, lo); hi = Math.min(M.len, hi); if (hi - lo < win) return p;
+  const B = M.buf, a0 = Math.max(0, lo - hw), a1 = Math.min(M.len, hi + hw), cs = new Float64Array(a1 - a0 + 1);
+  for (let i = a0; i < a1; i++) cs[i - a0 + 1] = cs[i - a0] + B[i] * B[i];
+  let best = p, be = Infinity;
+  for (let c = lo; c <= hi; c += 48) {
+    const i0 = Math.max(a0, c - hw), i1 = Math.min(a1, c + hw), e = (cs[i1 - a0] - cs[i0 - a0]) / Math.max(1, i1 - i0);
+    if (e < be - 1e-12 || (Math.abs(e - be) <= 1e-12 && Math.abs(c - p) < Math.abs(best - p))) { be = e; best = c; }
+  }
+  return best;
+}
+function candGroups(t) {   // 候補ごとの範囲：上の波形なら録音の位置、テイクならテイクの位置
+  const g = new Map(); if (!cands) return g;
+  const put = (gi, x0, x1) => { const o = g.get(gi); if (o) { o[0] = Math.min(o[0], x0); o[1] = Math.max(o[1], x1); } else g.set(gi, [x0, x1]); };
+  cands.forEach(([a, b, gi]) => {
+    if (t === topL) { put(gi, a, b); return; }
+    let acc = 0; for (const sg of t.segs) { const lo = Math.max(a, sg[0]), hi = Math.min(b, sg[1]); if (hi > lo) put(gi, acc + lo - sg[0], acc + hi - sg[0]); acc += sg[1] - sg[0]; }
+  });
+  return g;
+}
+function candAt(t, s) { for (const [gi, r] of candGroups(t)) if (s >= r[0] && s <= r[1]) return { gi, r }; return null; }
+function masterToLocal(t, m) { let acc = 0; for (const sg of t.segs) { if (m >= sg[0] && m < sg[1]) return acc + m - sg[0]; acc += sg[1] - sg[0]; } return null; }
+function tsumeRange(t, r) {   //「ここから詰める」：枠の頭から、テイクで選んでいた範囲の左端まで（枠がそれより前にあるときだけ）
+  if (!candQ || candQ.lane !== t || t === topL) return null;
+  const q = masterToLocal(t, candQ.m); if (q == null) return null;
+  return r[0] < q && r[1] <= q + 480 ? [Math.round(r[0]), Math.round(q)] : null;
 }
 function melBank() {
   const { nfft, nb } = CF, fs = 16000, mel = f => 2595 * Math.log10(1 + f / 700), imel = m => 700 * (10 ** (m / 2595) - 1);
@@ -1418,6 +1450,7 @@ function findCands(r, lane) {
   if (!r) return toast(inTake ? '波形をドラッグして、差し替える一言の範囲を選んでください' : '上の録音の波形で、もらった一言の範囲を選んでください');
   if ((r[1] - r[0]) / FS < 0.3) return toast('範囲が短すぎます（0.3秒以上）');
   if ((r[1] - r[0]) / FS > 15) return toast('範囲が長すぎます（15秒まで）');
+  if (!inTake) clip = [[Math.round(r[0]), Math.round(r[1])]];   // 上の波形：押した時点で選んだ範囲をコピー（候補を聞きに行くと選択が外れるため）
   toast('差し替え候補を探しています…', 4000);
   setTimeout(() => {
     const C = candFeatures(), nb = CF.nb, N = C.n, hop = CF.hop, fr = smp => Math.max(0, Math.min(N - 1, Math.round(smp / hop)));
@@ -1477,10 +1510,21 @@ function findCands(r, lane) {
     if (!picks.length) { clearCands(); return toast('似ている場所は見つかりませんでした'); }
     // back to positions in the recording (one candidate may cover several pieces of a take)
     cands = [];
-    picks.forEach(([a, b]) => { let r0 = seq[a]; for (let k = a + 1; k <= b + 1; k++) { if (k > b || seq[k] !== seq[k - 1] + 1) { cands.push([r0 * hop, Math.min(M.len, seq[k - 1] * hop + 1200)]); if (k <= b) r0 = seq[k]; } } });
+    const qm = inTake ? sliceSegs(lane.segs, r[0], r[1]) : [[Math.round(r[0]), Math.round(r[1])]];
+    const segOf = (p, isEnd) => { if (inTake) for (const sg of lane.segs) if (isEnd ? (p > sg[0] && p <= sg[1]) : (p >= sg[0] && p < sg[1])) return sg; return [0, M.len]; };
+    picks.forEach(([a, b], gi) => {
+      const ps = []; let r0 = seq[a];
+      for (let k = a + 1; k <= b + 1; k++) { if (k > b || seq[k] !== seq[k - 1] + 1) { ps.push([r0 * hop, Math.min(M.len, seq[k - 1] * hop + 1200)]); if (k <= b) r0 = seq[k]; } }
+      // 両端を、前後 0.1 秒の中でいちばん静かな所へ寄せる（聞いた範囲＝詰める・貼り付ける範囲になるように）
+      const f = ps[0], l = ps[ps.length - 1];
+      const ns = snapQuiet(f[0], segOf(f[0], false), qm); if (ns < f[1] - 480) f[0] = ns;
+      const ne = snapQuiet(l[1], segOf(l[1], true), qm); if (ne > l[0] + 480) l[1] = ne;
+      ps.forEach(q => cands.push([q[0], q[1], gi]));
+    });
+    candQ = inTake ? { lane, m: mapLocal(lane, Math.round(r[0])) } : null;
     window._candDebug = picks.map(([a, b, c]) => ({ at: +(seq[a] * hop / FS).toFixed(2), to: +((seq[b] * hop + 1200) / FS).toFixed(2), cost: +c.toFixed(3) })).concat([{ median: +med.toFixed(3) }]);
     $('btnCandClr').hidden = false; redrawAll();
-    toast(`似ている場所が ${picks.length} か所あります（紫の枠）`);
+    toast(`似ている場所が ${picks.length} か所あります（紫の枠）` + (inTake ? '' : '。選んだ範囲はコピーしてあります'));
   }, 30);
 }
 
@@ -1556,10 +1600,12 @@ const Player = {
   playRange(lane, a, b) {
     this.stop(true);
     const c = ctx(); c.resume();
-    const data = takeAudio(lane); a = clamp(Math.round(a), 0, data.length); b = clamp(Math.round(b), a, data.length);
+    const top = lane === topL, data = top ? M.buf : takeAudio(lane), n = top ? M.len : data.length;
+    a = clamp(Math.round(a), 0, n); b = clamp(Math.round(b), a, n);
     if (b - a < 64) return;
-    const buf = c.createBuffer(1, data.length, FS); buf.copyToChannel(data, 0);
-    const s = c.createBufferSource(); s.buffer = buf; s.connect(outBus); s.start(0, a / FS, (b - a) / FS);
+    const part = top ? data.subarray(a, b) : data;   // 上の波形：選んだ所だけをバッファにする（録音全体は大きいので）
+    const buf = c.createBuffer(1, part.length, FS); buf.copyToChannel(part, 0);
+    const s = c.createBufferSource(); s.buffer = buf; s.connect(outBus); s.start(0, top ? 0 : a / FS, (b - a) / FS);
     this.src = s; this.lane = lane; this.start = c.currentTime; this.offset = a; this.base = 0;
     s.onended = () => { if (this.src === s) { this.src = null; lane.stopPos = null; this.lane = null; redrawAll(); } };
   },
@@ -1649,12 +1695,14 @@ function drawTake(t) {
   drawCands(g, h, (a, b) => { const out = []; let acc = 0; for (const sg of t.segs) { const lo = Math.max(a, sg[0]), hi = Math.min(b, sg[1]); if (hi > lo) out.push([X(acc + lo - sg[0]), X(acc + hi - sg[0])]); acc += sg[1] - sg[0]; } return out; });
   // start-end region
   if (t.start != null && t.end != null) { g.fillStyle = 'rgba(79,193,180,.10)'; g.fillRect(X(t.start), 0, X(t.end) - X(t.start), h); }
+  const cp = cutPrev && cutPrev.lane === t ? cutPrev : null;   //「ここから詰める」で消える所：暗く、色を抜く
+  if (cp) { g.fillStyle = 'rgba(8,9,11,.5)'; g.fillRect(X(cp.a), 0, X(cp.b) - X(cp.a), h); }
   for (let px = 0; px < w; px++) {
     const l0 = v0 + px * spp; if (l0 < minLocal || l0 >= maxLocal) continue;
     const m0 = mapLocal(t, Math.floor(l0)); const p = M.peak(m0, m0 + Math.max(1, spp));
     const hh = Math.min(mid - 3, p * 1.6 * t.amp * (mid - 3));
     const inside = l0 >= 0 && l0 < L;
-    g.fillStyle = inside ? (t.start != null && t.end != null && l0 >= t.start && l0 < t.end ? '#7FD6CC' : '#A3A9B1') : '#4A4F57';
+    g.fillStyle = !inside ? '#4A4F57' : cp && l0 >= cp.a && l0 < cp.b ? '#5F646B' : (t.start != null && t.end != null && l0 >= t.start && l0 < t.end ? '#7FD6CC' : '#A3A9B1');
     g.fillRect(px, mid - hh, 1, Math.max(1, hh * 2));
   }
   // outside shading
@@ -1740,6 +1788,18 @@ function rebuildTakeDom() {
   const box = $('takes'); box.querySelectorAll('.take').forEach(n => n.remove());
   $('takesEmpty').style.display = takes.length ? 'none' : '';
   takes.forEach((t, i) => { t.name = (i + 1) + '本目'; t.dom = null; buildTakeDom(t); box.appendChild(t.dom.root); updTakeDom(t); t.dirty = true; });
+}
+function refreshTakeRows(list) {   // SPLIT：変わった行だけ直す（行を全部作り直すと、テイクが増えるほど重くなる）
+  const box = $('takes'); $('takesEmpty').style.display = takes.length ? 'none' : '';
+  list.forEach(t => {
+    const i = takes.indexOf(t); if (i < 0) return;
+    if (!t.dom) {   // 新しく足した行：並びの位置に入れる
+      t.name = (i + 1) + '本目'; buildTakeDom(t);
+      const next = takes.slice(i + 1).find(x => x.dom && x.dom.root.parentNode === box);
+      box.insertBefore(t.dom.root, next ? next.dom.root : null);
+    }
+    updTakeDom(t); t.dirty = true;
+  });
 }
 function buildTakeDom(t) {
   const root = document.createElement('section'); root.className = 'take';
@@ -1901,13 +1961,15 @@ function updTakeDom(t) {
 
 /* ================= lane mouse events ================= */
 let menuEl = null;
-function closeMenu() { if (menuEl) { if (menuEl._back) menuEl._back.remove(); menuEl.remove(); menuEl = null; } }
+function closeMenu() { if (cutPrev) { cutPrev.lane.dirty = true; cutPrev = null; } if (menuEl) { if (menuEl._back) menuEl._back.remove(); menuEl.remove(); menuEl = null; } }
 const MI_S = '<span class="mi-l"><span class="mi-b">S</span><span class="mi-y">START をマーク</span></span>';
 const MI_C = '<span class="mi-c">差し替え候補</span>';
+const MI_T = '<span class="mi-c">ここから詰める</span>';
+const playSel = (lane, r) => { stopPlayers(); Player.playRange(lane, r[0], r[1]); };
 const MI_E = '<span class="mi-l"><span class="mi-b">E</span><span class="mi-y">END をマーク</span></span>';
 function showMenu(x, y, items) {
   closeMenu(); menuEl = document.createElement('div'); menuEl.className = 'menu';
-  items.forEach(it => { if (it === '-') { const d = document.createElement('div'); d.className = 'msep'; menuEl.appendChild(d); return; } const [label, key, fn] = it; const b = document.createElement('button'); b.innerHTML = label + (key ? `<span class="kbd">${key}</span>` : ''); b.onclick = () => { closeMenu(); fn(); }; menuEl.appendChild(b); });
+  items.forEach(it => { if (it === '-') { const d = document.createElement('div'); d.className = 'msep'; menuEl.appendChild(d); return; } const [label, key, fn, hover] = it; const b = document.createElement('button'); b.innerHTML = label + (key ? `<span class="kbd">${key}</span>` : ''); b.onclick = () => { closeMenu(); fn(); }; if (hover) { b.onmouseenter = () => hover(true); b.onmouseleave = () => hover(false); } menuEl.appendChild(b); });
   document.body.appendChild(menuEl);
   const r = menuEl.getBoundingClientRect(); menuEl.style.left = Math.min(x, innerWidth - r.width - 8) + 'px'; menuEl.style.top = Math.min(y, innerHeight - r.height - 8) + 'px';
 }
@@ -2018,8 +2080,9 @@ function attachLaneEvents(cv, lane) {
     if (lane === topL) {
       const m = marks.find(m => Math.abs(G.toX(m.pos) - e.clientX) <= 8);
       if (m) { showMenu(e.clientX, e.clientY, [['この区切りを削除', '', () => deleteMark(m)]]); return; }
-      const r = selRange(topL), sx = G.toS(e.clientX);
-      if (r && sx >= r[0] && sx <= r[1]) { showMenu(e.clientX, e.clientY, [['コピー', 'Ctrl+C', () => copySel(topL)], ['選択範囲をWAVで書き出す', '', () => exportSelection(topL)], [MI_C, '', () => findCands(r, topL)]]); return; }
+      let r = selRange(topL); const sx = G.toS(e.clientX);
+      if (!(r && sx >= r[0] && sx <= r[1])) { const cg = candAt(topL, sx); if (cg) { topL.sel = [Math.round(cg.r[0]), Math.round(cg.r[1])]; topDirty = true; r = selRange(topL); } }   // 候補の枠：その枠を選択範囲にする
+      if (r && sx >= r[0] && sx <= r[1]) { showMenu(e.clientX, e.clientY, [['選択範囲を再生', '', () => playSel(topL, r)], ['コピー', 'Ctrl+C', () => copySel(topL)], ['選択範囲をWAVで書き出す', '', () => exportSelection(topL)], [MI_C, '', () => findCands(r, topL)]]); return; }
       if (Math.abs(G.toX(topL.cursor) - e.clientX) <= 12) showMenu(e.clientX, e.clientY, [['ここで区切る（SPLIT）', 'M', () => addMark(topL.cursor)]]);
       return;
     }
@@ -2035,9 +2098,12 @@ function attachLaneEvents(cv, lane) {
       showMenu(e.clientX, e.clientY, seDel.concat([[MI_S, '', () => setStartEnd(lane, 'start', nearCur ? lane.cursor : at)]]));
       return;
     }
-    const sx = G.toS(e.clientX), r = selRange(lane);
+    const sx = G.toS(e.clientX); let r = selRange(lane);
+    const cg = candAt(lane, sx);
+    if (!(r && sx >= r[0] && sx <= r[1]) && cg) { lane.sel = [Math.round(cg.r[0]), Math.round(cg.r[1])]; lane.dirty = true; r = selRange(lane); }   // 候補の枠：その枠を選択範囲にする（選んでいる範囲の上なら、そちらが優先）
     if (r && sx >= r[0] && sx <= r[1]) {
       const items = [
+        ['選択範囲を再生', '', () => playSel(lane, r)],
         ['カット', 'Ctrl+X', () => cutSel(lane)],
         ['コピー', 'Ctrl+C', () => copySel(lane)],
         ['貼り付け（差し替え）', 'Ctrl+V', () => paste(lane)],
@@ -2045,8 +2111,11 @@ function attachLaneEvents(cv, lane) {
         ['選択範囲をWAVで書き出す', '', () => exportSelection(lane)],
         [MI_C, '', () => findCands(r, lane)]
       ];
+      const tr = cg && Math.abs(r[0] - Math.round(cg.r[0])) <= 1 && Math.abs(r[1] - Math.round(cg.r[1])) <= 1 ? tsumeRange(lane, cg.r) : null;
+      if (tr) items.push([MI_T, '', () => { opDelete(lane, tr[0], tr[1]); toast('詰めました（' + fmtS(tr[1] - tr[0]) + '）'); },
+        on => { cutPrev = on ? { lane, a: tr[0], b: tr[1] } : null; lane.dirty = true; }]);
       const bi = boundariesIn(lane, r[0], r[1]);
-      if (bi.n) items.unshift(['結合（分割線を消す）', '', () => opJoin(lane, r[0], r[1])]);
+      if (bi.n) items.splice(1, 0, ['結合（分割線を消す）', '', () => opJoin(lane, r[0], r[1])]);
       showMenu(e.clientX, e.clientY, items); return;
     }
     if (!lane.segs.length) return;
