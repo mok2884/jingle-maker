@@ -12,6 +12,11 @@
 .menu .mi-b{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:4px;font-size:11px;font-weight:700;background:#E8A33D;color:#241703;margin-right:8px}
 .menu .mi-y{color:#F2B65A;font-weight:600}
 .menu .mi-c{color:#C9A8FF;font-weight:600}
+.menu .mi-g{color:#9CCB8A;font-weight:600}
+.menu.peek{background:transparent;border-color:transparent;box-shadow:none}
+.menu.peek button:not(.keep){opacity:0}
+.menu.peek button.keep{background:#2A2D33;outline:1px solid #454A53}
+.menu.peek .msep{opacity:0}
 .menu .msep{height:1px;background:#454A53;margin:4px 6px}
 #recAlarm{position:fixed;left:50%;top:8px;transform:translateX(-50%);z-index:9999;max-width:70vw;background:#7a1010;color:#fff;border:2px solid #ff5b5b;border-radius:8px;padding:10px 14px;font-size:14px;line-height:1.5;box-shadow:0 6px 24px rgba(0,0,0,.5);cursor:pointer;white-space:pre-line}
 #recAlarm b{display:block;font-size:15px;margin-bottom:2px}
@@ -444,15 +449,21 @@ function folderDialog(savedName) {
     d.querySelectorAll('button').forEach(b => b.onclick = () => { back.remove(); res(b.dataset.a); });
   });
 }
+let dirRefused = false;   // Chrome が書き込みを断った：フォルダ選びを繰り返さない
+const DIR_REFUSED = 'Chrome がフォルダへの書き込みを許可しませんでした。アドレスバーの左のアイコン →「サイトの設定」→「ファイルの編集」を「確認する」か「許可」にして、ページを読み込み直してください';
 async function chooseRoot(forcePick) {
   if (isExe || !hasFS) return false;
+  dirRefused = false;
   for (;;) {
     const saved = forcePick ? null : (await IDB.get('rootDir'));
     const act = await folderDialog(saved ? saved.name : null); forcePick = false;
     if (act === 'none') { updDirNames(); return false; }
     let h = null;
-    if (act === 'use') { if (await verifyPerm(saved, 'readwrite')) h = saved; else toast('フォルダへのアクセスが許可されませんでした'); }
-    else { try { h = await window.showDirectoryPicker({ id: 'rootDir', mode: 'readwrite' }); } catch (e) {} }
+    if (act === 'use') { if (await verifyPerm(saved, 'readwrite')) h = saved; else { dirRefused = true; toast(DIR_REFUSED, 9000); updDirNames(); return false; } }
+    else {
+      try { h = await window.showDirectoryPicker({ id: 'rootDir', mode: 'readwrite' }); }
+      catch (e) { if (!e || e.name !== 'AbortError') { dirRefused = true; toast(DIR_REFUSED + '（' + (e && e.name || e) + '）', 9000); updDirNames(); return false; } }   // AbortError＝選ぶのをやめただけ
+    }
     if (h) { try { await setupRoot(h); return true; } catch (e) { toast('このフォルダには書き込めません：' + (e && e.message || e), 4000); } }
   }
 }
@@ -633,7 +644,7 @@ async function openDirectCapture() {
   } catch (e) { console.warn('direct capture unavailable', e); return false; }
 }
 /* the input device itself skipped audio (driver/USB). Warn so the take can be checked. */
-const APP_VER = '1.4.8';
+const APP_VER = '1.4.9';
 /* lost input: Windows/Chrome hand audio over in 10 ms blocks, so a real loss is 10 ms or more.
    A shorter step is Chrome re-timing its clock (no audio missing): it is only written to the log. */
 const GAP_MIN_MS = 8;
@@ -907,7 +918,7 @@ async function openSession(presetDir, preferAuto) {
   if (!hasFS) { toast('このブラウザではセッションを開けません（Chromeで開いてください）'); return; }
   if (rec.on) { toast('録音中は開けません'); return; }
   let dir = presetDir || null;
-  if (!dir && !isExe && !workDir) await ensureWorkDir();
+  if (!dir && !isExe && !workDir) { await ensureWorkDir(); if (dirRefused) return; }
   if (!dir && workDir) {
     const ds = []; for await (const [n, h] of workDir.entries()) if (h.kind === 'directory') ds.push(h);
     if (!isExe && rootDir) for await (const [n, h] of rootDir.entries()) if (h.kind === 'directory' && n !== 'セッション' && n !== 'ジングルオケ') { let has = false; for await (const [m] of h.entries()) if (/\.json$/i.test(m)) { has = true; break; } if (has) ds.push(h); }   // sessions saved before v1.4 sit directly in the folder
@@ -1695,15 +1706,23 @@ function drawTake(t) {
   drawCands(g, h, (a, b) => { const out = []; let acc = 0; for (const sg of t.segs) { const lo = Math.max(a, sg[0]), hi = Math.min(b, sg[1]); if (hi > lo) out.push([X(acc + lo - sg[0]), X(acc + hi - sg[0])]); acc += sg[1] - sg[0]; } return out; });
   // start-end region
   if (t.start != null && t.end != null) { g.fillStyle = 'rgba(79,193,180,.10)'; g.fillRect(X(t.start), 0, X(t.end) - X(t.start), h); }
-  const cp = cutPrev && cutPrev.lane === t ? cutPrev : null;   //「ここから詰める」で消える所：暗く、色を抜く
-  if (cp) { g.fillStyle = 'rgba(8,9,11,.5)'; g.fillRect(X(cp.a), 0, X(cp.b) - X(cp.a), h); }
+  const cp = cutPrev && cutPrev.lane === t ? cutPrev : null;   //「ここから詰める」で消える所（波形の上に緑の半透明＋あみあみ）
   for (let px = 0; px < w; px++) {
     const l0 = v0 + px * spp; if (l0 < minLocal || l0 >= maxLocal) continue;
     const m0 = mapLocal(t, Math.floor(l0)); const p = M.peak(m0, m0 + Math.max(1, spp));
     const hh = Math.min(mid - 3, p * 1.6 * t.amp * (mid - 3));
     const inside = l0 >= 0 && l0 < L;
-    g.fillStyle = !inside ? '#4A4F57' : cp && l0 >= cp.a && l0 < cp.b ? '#5F646B' : (t.start != null && t.end != null && l0 >= t.start && l0 < t.end ? '#7FD6CC' : '#A3A9B1');
+    g.fillStyle = !inside ? '#4A4F57' : (t.start != null && t.end != null && l0 >= t.start && l0 < t.end ? '#7FD6CC' : '#A3A9B1');
     g.fillRect(px, mid - hh, 1, Math.max(1, hh * 2));
+  }
+  if (cp) {
+    const x0 = X(cp.a), x1 = X(cp.b);
+    g.save(); g.beginPath(); g.rect(x0, 0, x1 - x0, h); g.clip();
+    g.fillStyle = 'rgba(96,160,80,.22)'; g.fillRect(x0, 0, x1 - x0, h);
+    g.strokeStyle = 'rgba(156,203,138,.45)'; g.lineWidth = 1;
+    for (let k = x0 - h; k < x1; k += 7) { g.beginPath(); g.moveTo(k, h); g.lineTo(k + h, 0); g.stroke(); }
+    g.fillStyle = '#9CCB8A'; g.fillRect(x0, 0, x1 - x0, 3);
+    g.restore();
   }
   // outside shading
   g.fillStyle = 'rgba(15,17,19,.55)'; if (X(0) > 0) g.fillRect(0, 0, X(0), h); if (X(L) < w) g.fillRect(X(L), 0, w - X(L), h);
@@ -1964,12 +1983,12 @@ let menuEl = null;
 function closeMenu() { if (cutPrev) { cutPrev.lane.dirty = true; cutPrev = null; } if (menuEl) { if (menuEl._back) menuEl._back.remove(); menuEl.remove(); menuEl = null; } }
 const MI_S = '<span class="mi-l"><span class="mi-b">S</span><span class="mi-y">START をマーク</span></span>';
 const MI_C = '<span class="mi-c">差し替え候補</span>';
-const MI_T = '<span class="mi-c">ここから詰める</span>';
+const MI_T = '<span class="mi-g">ここから詰める</span>';
 const playSel = (lane, r) => { stopPlayers(); Player.playRange(lane, r[0], r[1]); };
 const MI_E = '<span class="mi-l"><span class="mi-b">E</span><span class="mi-y">END をマーク</span></span>';
 function showMenu(x, y, items) {
   closeMenu(); menuEl = document.createElement('div'); menuEl.className = 'menu';
-  items.forEach(it => { if (it === '-') { const d = document.createElement('div'); d.className = 'msep'; menuEl.appendChild(d); return; } const [label, key, fn, hover] = it; const b = document.createElement('button'); b.innerHTML = label + (key ? `<span class="kbd">${key}</span>` : ''); b.onclick = () => { closeMenu(); fn(); }; if (hover) { b.onmouseenter = () => hover(true); b.onmouseleave = () => hover(false); } menuEl.appendChild(b); });
+  items.forEach(it => { if (it === '-') { const d = document.createElement('div'); d.className = 'msep'; menuEl.appendChild(d); return; } const [label, key, fn, hover] = it; const b = document.createElement('button'); b.innerHTML = label + (key ? `<span class="kbd">${key}</span>` : ''); b.onclick = () => { closeMenu(); fn(); }; if (hover) { b.onmouseenter = () => { hover(true); b.classList.add('keep'); menuEl.classList.add('peek'); }; b.onmouseleave = () => { hover(false); if (menuEl) menuEl.classList.remove('peek'); }; } menuEl.appendChild(b); });
   document.body.appendChild(menuEl);
   const r = menuEl.getBoundingClientRect(); menuEl.style.left = Math.min(x, innerWidth - r.width - 8) + 'px'; menuEl.style.top = Math.min(y, innerHeight - r.height - 8) + 'px';
 }
@@ -2081,8 +2100,8 @@ function attachLaneEvents(cv, lane) {
       const m = marks.find(m => Math.abs(G.toX(m.pos) - e.clientX) <= 8);
       if (m) { showMenu(e.clientX, e.clientY, [['この区切りを削除', '', () => deleteMark(m)]]); return; }
       let r = selRange(topL); const sx = G.toS(e.clientX);
-      if (!(r && sx >= r[0] && sx <= r[1])) { const cg = candAt(topL, sx); if (cg) { topL.sel = [Math.round(cg.r[0]), Math.round(cg.r[1])]; topDirty = true; r = selRange(topL); } }   // 候補の枠：その枠を選択範囲にする
-      if (r && sx >= r[0] && sx <= r[1]) { showMenu(e.clientX, e.clientY, [['選択範囲を再生', '', () => playSel(topL, r)], ['コピー', 'Ctrl+C', () => copySel(topL)], ['選択範囲をWAVで書き出す', '', () => exportSelection(topL)], [MI_C, '', () => findCands(r, topL)]]); return; }
+      let fromFrame = false; if (!(r && sx >= r[0] && sx <= r[1])) { const cg = candAt(topL, sx); if (cg) { fromFrame = true; topL.sel = [Math.round(cg.r[0]), Math.round(cg.r[1])]; topDirty = true; r = selRange(topL); } }   // 候補の枠：その枠を選択範囲にする
+      if (r && sx >= r[0] && sx <= r[1]) { showMenu(e.clientX, e.clientY, [['選択範囲を再生', '', () => playSel(topL, r)], ['コピー', 'Ctrl+C', () => copySel(topL)], ['選択範囲をWAVで書き出す', '', () => exportSelection(topL)]].concat(fromFrame ? [] : [[MI_C, '', () => findCands(r, topL)]])); return; }
       if (Math.abs(G.toX(topL.cursor) - e.clientX) <= 12) showMenu(e.clientX, e.clientY, [['ここで区切る（SPLIT）', 'M', () => addMark(topL.cursor)]]);
       return;
     }
@@ -2100,7 +2119,7 @@ function attachLaneEvents(cv, lane) {
     }
     const sx = G.toS(e.clientX); let r = selRange(lane);
     const cg = candAt(lane, sx);
-    if (!(r && sx >= r[0] && sx <= r[1]) && cg) { lane.sel = [Math.round(cg.r[0]), Math.round(cg.r[1])]; lane.dirty = true; r = selRange(lane); }   // 候補の枠：その枠を選択範囲にする（選んでいる範囲の上なら、そちらが優先）
+    let fromFrame = false; if (!(r && sx >= r[0] && sx <= r[1]) && cg) { fromFrame = true; lane.sel = [Math.round(cg.r[0]), Math.round(cg.r[1])]; lane.dirty = true; r = selRange(lane); }   // 候補の枠：その枠を選択範囲にする（選んでいる範囲の上なら、そちらが優先）
     if (r && sx >= r[0] && sx <= r[1]) {
       const items = [
         ['選択範囲を再生', '', () => playSel(lane, r)],
@@ -2111,6 +2130,7 @@ function attachLaneEvents(cv, lane) {
         ['選択範囲をWAVで書き出す', '', () => exportSelection(lane)],
         [MI_C, '', () => findCands(r, lane)]
       ];
+      if (fromFrame) items.pop();   // 枠から出したメニューに「差し替え候補」は出さない（差し替えのボタンに見えるため）
       const tr = cg && Math.abs(r[0] - Math.round(cg.r[0])) <= 1 && Math.abs(r[1] - Math.round(cg.r[1])) <= 1 ? tsumeRange(lane, cg.r) : null;
       if (tr) items.push([MI_T, '', () => { opDelete(lane, tr[0], tr[1]); toast('詰めました（' + fmtS(tr[1] - tr[0]) + '）'); },
         on => { cutPrev = on ? { lane, a: tr[0], b: tr[1] } : null; lane.dirty = true; }]);
