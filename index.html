@@ -497,13 +497,18 @@ function ctx() {
   }
   return actx;
 }
+function defaultName(list) {   // Chrome は Windows の既定の機器を「既定 - 〇〇」（deviceId 'default'）として返す
+  const d = list.find(x => x.deviceId === 'default'); if (!d || !d.label) return '';
+  return d.label.replace(/^(既定|Default)\s*[-–—]\s*/i, '');
+}
 async function listDevices() {
   try {
     const d = await navigator.mediaDevices.enumerateDevices();
     const ins = d.filter(x => x.kind === 'audioinput'), outs = d.filter(x => x.kind === 'audiooutput');
     const esc = s => s.replace(/[<&>"]/g, '');
-    $('selIn').innerHTML = '<option value="">既定</option>' + ins.map((x, i) => `<option value="${x.deviceId}">${esc(x.label || '入力' + (i + 1))}</option>`).join('');
-    $('selOut').innerHTML = '<option value="">既定</option>' + outs.map((x, i) => `<option value="${x.deviceId}">${esc(x.label || '出力' + (i + 1))}</option>`).join('');
+    const dn = defaultName(ins), dno = defaultName(outs);   //「既定」が今どの機器を指しているか（許可の前は名前が取れない）
+    $('selIn').innerHTML = `<option value="">${dn ? '既定（' + esc(dn) + '）' : '既定'}</option>` + ins.map((x, i) => `<option value="${x.deviceId}">${esc(x.label || '入力' + (i + 1))}</option>`).join('');
+    $('selOut').innerHTML = `<option value="">${dno ? '既定（' + esc(dno) + '）' : '既定'}</option>` + outs.map((x, i) => `<option value="${x.deviceId}">${esc(x.label || '出力' + (i + 1))}</option>`).join('');
     $('selIn').value = ins.some(x => x.deviceId === S.inId) ? S.inId : '';
     $('selOut').value = outs.some(x => x.deviceId === S.outId) ? S.outId : '';
     if (typeof updRecUI === 'function') updRecUI();
@@ -557,13 +562,22 @@ function openMic() {
   if (!mic.opening) mic.opening = openMicNow().finally(() => { mic.opening = null; });
   return mic.opening;
 }
+function micErrText(e) {   // 開けなかった本当の理由（前は何でも「許可が必要です」と出していた）
+  const n = e && e.name || '', o = $('selIn').selectedOptions[0];
+  const dev = S.inId ? '入力「' + (o ? o.textContent : '選んだ機器') + '」' : (o && o.textContent !== '既定' ? o.textContent.replace(/^既定（(.*)）$/, '既定の入力「$1」') : '既定の入力');
+  if (n === 'NotAllowedError' || n === 'SecurityError') return 'マイク（入力）を使う許可が必要です。アドレスバーの左のアイコン →「サイトの設定」→「マイク」を確認してください';
+  if (n === 'NotReadableError' || n === 'AbortError') return dev + 'を開けませんでした。ほかのアプリが使っているか、Windows で無効になっています。入力の一覧から機器を選んでください';
+  if (n === 'NotFoundError') return '入力の機器が見つかりません。インターフェースがつながっているか確かめてください';
+  if (n === 'OverconstrainedError') return dev + 'が見つかりません。入力の一覧から選び直してください';
+  return dev + 'を開けませんでした（' + (n || e) + '）。入力の一覧から機器を選んでください';
+}
 async function openMicNow() {
   const c = ctx(); c.resume().catch(() => {});   // don't wait: the input works without the playback side running
   try {
     const a = { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: { ideal: 2 } };
     if (S.inId) a.deviceId = { exact: S.inId };
     mic.stream = await navigator.mediaDevices.getUserMedia({ audio: a });
-  } catch (e) { toast('マイク（入力）を使う許可が必要です', 4000); return false; }
+  } catch (e) { toast(micErrText(e), 9000); listDevices(); return false; }
   if (!workletLoaded) {
     try { await c.audioWorklet.addModule('data:application/javascript;base64,' + btoa(WORKLET)); workletLoaded = true; }
     catch (e) { try { await c.audioWorklet.addModule(URL.createObjectURL(new Blob([WORKLET], { type: 'application/javascript' }))); workletLoaded = true; } catch (e2) {} }
@@ -644,7 +658,7 @@ async function openDirectCapture() {
   } catch (e) { console.warn('direct capture unavailable', e); return false; }
 }
 /* the input device itself skipped audio (driver/USB). Warn so the take can be checked. */
-const APP_VER = '1.4.10';
+const APP_VER = '1.4.11';
 /* lost input: Windows/Chrome hand audio over in 10 ms blocks, so a real loss is 10 ms or more.
    A shorter step is Chrome re-timing its clock (no audio missing): it is only written to the log. */
 const GAP_MIN_MS = 8;
