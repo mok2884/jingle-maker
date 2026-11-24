@@ -658,7 +658,7 @@ async function openDirectCapture() {
   } catch (e) { console.warn('direct capture unavailable', e); return false; }
 }
 /* the input device itself skipped audio (driver/USB). Warn so the take can be checked. */
-const APP_VER = '1.4.12';
+const APP_VER = '1.4.13';
 /* lost input: Windows/Chrome hand audio over in 10 ms blocks, so a real loss is 10 ms or more.
    A shorter step is Chrome re-timing its clock (no audio missing): it is only written to the log. */
 const GAP_MIN_MS = 8;
@@ -1602,6 +1602,19 @@ function takeAudio(t) { if (!t.cache) t.cache = renderSegs(t.segs, t.gain); retu
 
 /* ================= player (editing) ================= */
 let activeLane = topL;
+/* 出力が止まっていないか：再生を始めて 0.6 秒たっても音の時計が進まなければ、止めて知らせる
+   （ほかのアプリが出力の機器を排他で使っていると、Chrome はその機器に音を出せず、時計も再生位置も止まる） */
+function watchOut() {
+  const c = actx; if (!c) return;
+  const t0 = c.currentTime; clearTimeout(watchOut.h);
+  watchOut.h = setTimeout(() => {
+    if (!(Player.src || playersActive())) return;
+    if (c.currentTime - t0 > 0.05) return;
+    Player.stop(); stopPlayers();
+    const o = $('selOut').selectedOptions[0], nm = o ? o.textContent : '既定';
+    toast('出力「' + nm + '」が動いていません。ほかのアプリが排他で使っていないか確かめるか、出力を選び直してください', 9000);
+  }, 600);
+}
 const Player = {
   src: null, lane: null, start: 0, offset: 0, base: 0,
   play(lane, fromCursor) {
@@ -1623,7 +1636,7 @@ const Player = {
     s.start(0, off);
     this.src = s; this.lane = lane; this.start = c.currentTime; this.offset = lane === topL ? startPos : startPos; this.base = base;
     s.onended = () => { if (this.src === s) { this.src = null; lane.stopPos = null; this.lane = null; redrawAll(); } };
-    loop();
+    loop(); watchOut();
   },
   playRange(lane, a, b) {
     this.stop(true);
@@ -1636,6 +1649,7 @@ const Player = {
     const s = c.createBufferSource(); s.buffer = buf; s.connect(outBus); s.start(0, top ? 0 : a / FS, (b - a) / FS);
     this.src = s; this.lane = lane; this.start = c.currentTime; this.offset = a; this.base = 0;
     s.onended = () => { if (this.src === s) { this.src = null; lane.stopPos = null; this.lane = null; redrawAll(); } };
+    watchOut();
   },
   playFast(lane, data, startPos) {
     // ×1.4 with the voice at its own pitch: the browser's pitch-preserving media player
@@ -1646,7 +1660,7 @@ const Player = {
     const src = { fast: el, stop() { el.pause(); } };
     this.src = src; this.lane = lane; this.offset = startPos; this.base = 0;
     el.onended = () => { if (this.src === src) { this.src = null; lane.stopPos = null; this.lane = null; redrawAll(); } };
-    el.play().catch(() => {}); loop();
+    el.play().catch(() => {}); loop(); watchOut();
   },
   pos() { if (!this.src) return null; if (this.src.fast) return Math.round(this.src.fast.currentTime * FS); return this.offset + Math.round((actx.currentTime - this.start) * FS); },
   stop(quiet) {
@@ -2504,7 +2518,7 @@ function ensureAudio(t) {
 function togglePlayer(t) {
   const a = ensureAudio(t);
   if (!a) { toast('もう一度Doneすると再生できます'); return; }
-  if (a.paused) { Player.stop(); stopPlayers(); ctx().resume(); if (a.ended) a.currentTime = 0; a.playbackRate = t.speed || 1; a.play(); t.dom.pbtn.textContent = '■'; }
+  if (a.paused) { Player.stop(); stopPlayers(); ctx().resume(); if (a.ended) a.currentTime = 0; a.playbackRate = t.speed || 1; a.play(); t.dom.pbtn.textContent = '■'; watchOut(); }
   else { a.pause(); t.dom.pbtn.textContent = '▶'; }
 }
 
