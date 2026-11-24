@@ -658,7 +658,7 @@ async function openDirectCapture() {
   } catch (e) { console.warn('direct capture unavailable', e); return false; }
 }
 /* the input device itself skipped audio (driver/USB). Warn so the take can be checked. */
-const APP_VER = '1.4.11';
+const APP_VER = '1.4.12';
 /* lost input: Windows/Chrome hand audio over in 10 ms blocks, so a real loss is 10 ms or more.
    A shorter step is Chrome re-timing its clock (no audio missing): it is only written to the log. */
 const GAP_MIN_MS = 8;
@@ -1686,8 +1686,8 @@ function drawTop() {
   $('topCard').classList.toggle('empty', !M.len && !rec.on);
   const cv = $('topCanvas'); const { g, w, h } = setupCanvas(cv); g.clearRect(0, 0, w, h);
   const [tv0, tv1] = topView(), x = i => (i - tv0) / (tv1 - tv0) * w, mid = h / 2;
-  if (topL.sel) { const a = Math.min(topL.sel[0], topL.sel[1]), b = Math.max(topL.sel[0], topL.sel[1]); g.fillStyle = 'rgba(255,255,255,.12)'; g.fillRect(x(a), 0, x(b) - x(a), h); }
   drawCands(g, h, (a, b) => [[x(a), x(b)]]);
+  if (topL.sel) { const a = Math.min(topL.sel[0], topL.sel[1]), b = Math.max(topL.sel[0], topL.sel[1]); g.fillStyle = 'rgba(255,255,255,.12)'; g.fillRect(x(a), 0, x(b) - x(a), h); }   // 選択は枠の上（選んだ枠が明るく見える）
   g.fillStyle = '#7E848D';
   const spp = (tv1 - tv0) / w;
   for (let px = 0; px < w; px++) { const i0 = tv0 + px * spp; if (i0 >= M.len) break; const p = M.peak(i0, i0 + Math.max(1, spp)); const hh = Math.min(mid - 3, p * 1.6 * (topL.amp || 1) * (mid - 3)); g.fillRect(px, mid - hh, 1, Math.max(1, hh * 2)); }
@@ -1717,10 +1717,10 @@ function drawTake(t) {
   g.save(); g.translate(0, FLAG_BAND); const h = H - FLAG_BAND, mid = h / 2;
   const segFirst = t.segs[0], segLast = t.segs[t.segs.length - 1];
   const minLocal = -segFirst[0], maxLocal = L + (M.len - segLast[1]);
-  // selection
-  if (t.sel) { const a = Math.min(t.sel[0], t.sel[1]), b = Math.max(t.sel[0], t.sel[1]); g.fillStyle = 'rgba(255,255,255,.13)'; g.fillRect(X(a), 0, X(b) - X(a), h); }
   // 差し替え候補 (kept as master positions, so they follow cuts/pastes and only the remaining part stays coloured)
   drawCands(g, h, (a, b) => { const out = []; let acc = 0; for (const sg of t.segs) { const lo = Math.max(a, sg[0]), hi = Math.min(b, sg[1]); if (hi > lo) out.push([X(acc + lo - sg[0]), X(acc + hi - sg[0])]); acc += sg[1] - sg[0]; } return out; });
+  // selection (over the frames, so a selected frame looks lighter)
+  if (t.sel) { const a = Math.min(t.sel[0], t.sel[1]), b = Math.max(t.sel[0], t.sel[1]); g.fillStyle = 'rgba(255,255,255,.13)'; g.fillRect(X(a), 0, X(b) - X(a), h); }
   // start-end region
   if (t.start != null && t.end != null) { g.fillStyle = 'rgba(79,193,180,.10)'; g.fillRect(X(t.start), 0, X(t.end) - X(t.start), h); }
   const cp = cutPrev && cutPrev.lane === t ? cutPrev : null;   //「ここから詰める」で消える所（波形の上に緑の半透明＋あみあみ）
@@ -2117,7 +2117,8 @@ function attachLaneEvents(cv, lane) {
       const m = marks.find(m => Math.abs(G.toX(m.pos) - e.clientX) <= 8);
       if (m) { showMenu(e.clientX, e.clientY, [['この区切りを削除', '', () => deleteMark(m)]]); return; }
       let r = selRange(topL); const sx = G.toS(e.clientX);
-      let fromFrame = false; if (!(r && sx >= r[0] && sx <= r[1])) { const cg = candAt(topL, sx); if (cg) { fromFrame = true; topL.sel = [Math.round(cg.r[0]), Math.round(cg.r[1])]; topDirty = true; r = selRange(topL); } }   // 候補の枠：その枠を選択範囲にする
+      const cgt = candAt(topL, sx); let fromFrame = !!(r && cgt && Math.abs(r[0] - Math.round(cgt.r[0])) <= 1 && Math.abs(r[1] - Math.round(cgt.r[1])) <= 1);
+      if (!(r && sx >= r[0] && sx <= r[1])) { const cg = cgt; if (cg) { fromFrame = true; topL.sel = [Math.round(cg.r[0]), Math.round(cg.r[1])]; topDirty = true; r = selRange(topL); } }   // 候補の枠：その枠を選択範囲にする
       if (r && sx >= r[0] && sx <= r[1]) { showMenu(e.clientX, e.clientY, [['選択範囲を再生', '', () => playSel(topL, r)], ['コピー', 'Ctrl+C', () => copySel(topL)], ['選択範囲をWAVで書き出す', '', () => exportSelection(topL)]].concat(fromFrame ? [] : [[MI_C, '', () => findCands(r, topL)]])); return; }
       if (Math.abs(G.toX(topL.cursor) - e.clientX) <= 12) showMenu(e.clientX, e.clientY, [['ここで区切る（SPLIT）', 'M', () => addMark(topL.cursor)]]);
       return;
@@ -2136,7 +2137,8 @@ function attachLaneEvents(cv, lane) {
     }
     const sx = G.toS(e.clientX); let r = selRange(lane);
     const cg = candAt(lane, sx);
-    let fromFrame = false; if (!(r && sx >= r[0] && sx <= r[1]) && cg) { fromFrame = true; lane.sel = [Math.round(cg.r[0]), Math.round(cg.r[1])]; lane.dirty = true; r = selRange(lane); }   // 候補の枠：その枠を選択範囲にする（選んでいる範囲の上なら、そちらが優先）
+    const sameAsFrame = (r, f) => r && f && Math.abs(r[0] - Math.round(f[0])) <= 1 && Math.abs(r[1] - Math.round(f[1])) <= 1;
+    let fromFrame = sameAsFrame(r, cg && cg.r); if (!(r && sx >= r[0] && sx <= r[1]) && cg) { fromFrame = true; lane.sel = [Math.round(cg.r[0]), Math.round(cg.r[1])]; lane.dirty = true; r = selRange(lane); }   // 候補の枠：その枠を選択範囲にする（選んでいる範囲の上なら、そちらが優先）
     if (r && sx >= r[0] && sx <= r[1]) {
       const items = [
         ['選択範囲を再生', '', () => playSel(lane, r)],
